@@ -15,13 +15,15 @@ plugins: [
     resolve: `gatsby-source-strapi`,
     options: {
       apiURL: `http://localhost:1337`,
-      contentTypes: [
-        `article`,
-        `user`
-      ]
+      contentTypes: [`article`, `user`],
+      // loginData object is optional
+      loginData: {
+        identifier: '',
+        password: '',
+      },
     },
   },
-]
+];
 ```
 
 ## How to query
