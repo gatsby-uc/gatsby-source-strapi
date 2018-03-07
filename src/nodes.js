@@ -13,7 +13,7 @@ const { createNodeFactory } = createNodeHelpers({
  * @constructor
  */
 export const Node = (type, node) =>
-  createNodeFactory(type, node => {
+  createNodeFactory(type, (node) => {
     node.id = node.strapiId;
     return node;
   })(node);
