@@ -1,21 +1,29 @@
 import axios from 'axios';
 import { isObject, startsWith, forEach } from 'lodash';
 
-module.exports = async ({ apiURL, contentType }) => {
+module.exports = async ({ apiURL, contentType, jwtToken }) => {
   console.time('Fetch Strapi data');
-  console.log('Starting to fetch data from Strapi');
+  console.log(`Starting to fetch data from Strapi (${contentType})`);
 
   // Define API endpoint.
   const apiEndpoint = `${apiURL}/${contentType}`;
 
+  // Set authorization token
+  let fetchRequestConfig = {};
+  if (jwtToken !== null) {
+    fetchRequestConfig.headers = {
+      Authorization: `Bearer ${jwtToken}`,
+    };
+  }
+
   // Make API request.
-  const documents = await axios(apiEndpoint);
+  const documents = await axios(apiEndpoint, fetchRequestConfig);
 
   // Query all documents from client.
   console.timeEnd('Fetch Strapi data');
 
   // Map and clean data.
-  return documents.data.map(item => clean(item));
+  return documents.data.map((item) => clean(item));
 };
 
 /**
@@ -24,7 +32,7 @@ module.exports = async ({ apiURL, contentType }) => {
  * @param {object} item - Entry needing clean
  * @returns {object} output - Object cleaned
  */
-const clean = item => {
+const clean = (item) => {
   forEach(item, (value, key) => {
     if (startsWith(key, `__`)) {
       delete item[key];
