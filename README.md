@@ -16,14 +16,14 @@ plugins: [
     options: {
       apiURL: `http://localhost:1337`,
       contentTypes: [`article`, `user`],
-      // loginData object is optional
+      // Possibility to login with a strapi user, when content types are not publically available (optional).
       loginData: {
-        identifier: '',
-        password: '',
+        identifier: "",
+        password: "",
       },
     },
   },
-];
+]
 ```
 
 ## How to query
