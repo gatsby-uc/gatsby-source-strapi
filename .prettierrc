@@ -1,10 +1,5 @@
 {
-  "printWidth": 120,
-  "tabWidth": 2,
-  "semi": true,
-  "bracketSpacing": true,
-  "jsxBracketSameLine": false,
-  "arrowParens": "always",
-  "singleQuote": true,
-  "trailingComma": "all"
+  "trailingComma": "es5",
+  "semi": false,
+  "tabWidth": 2
 }

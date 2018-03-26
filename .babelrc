@@ -6,7 +6,7 @@
       {
         "targets": {
           "node": 4.0,
-          "uglify": true,
+          "uglify": true
         }
       }
     ]
