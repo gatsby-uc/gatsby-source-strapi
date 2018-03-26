@@ -26,8 +26,11 @@ module.exports = async ({ apiURL, contentType }) => {
  */
 const clean = item => {
   forEach(item, (value, key) => {
-    if (startsWith(key, '_')) {
+    if (startsWith(key, `__`)) {
       delete item[key];
+    } else if (startsWith(key, `_`)) {
+      delete item[key];
+      item[key.slice(1)] = value;
     } else if (isObject(value)) {
       item[key] = clean(value);
     }
