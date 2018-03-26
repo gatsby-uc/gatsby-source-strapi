@@ -1,8 +1,8 @@
-import axios from "axios"
-import { isObject, startsWith, forEach } from "lodash"
+import axios from 'axios'
+import { isObject, startsWith, forEach } from 'lodash'
 
 module.exports = async ({ apiURL, contentType, jwtToken }) => {
-  console.time("Fetch Strapi data")
+  console.time('Fetch Strapi data')
   console.log(`Starting to fetch data from Strapi (${contentType})`)
 
   // Define API endpoint.
@@ -20,7 +20,7 @@ module.exports = async ({ apiURL, contentType, jwtToken }) => {
   const documents = await axios(apiEndpoint, fetchRequestConfig)
 
   // Query all documents from client.
-  console.timeEnd("Fetch Strapi data")
+  console.timeEnd('Fetch Strapi data')
 
   // Map and clean data.
   return documents.data.map(item => clean(item))

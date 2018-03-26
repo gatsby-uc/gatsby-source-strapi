@@ -1,8 +1,7 @@
 {
   "name": "gatsby-source-strapi",
-  "version": "0.0.3",
-  "description":
-    "Gatsby source plugin for building websites using Strapi as a data source",
+  "version": "0.0.2",
+  "description": "Gatsby source plugin for building websites using Strapi as a data source",
   "author": {
     "email": "hi@strapi.io",
     "name": "Strapi Solutions",
@@ -28,9 +27,15 @@
     "prepublish": "npm run build",
     "build": "babel src --out-dir .",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write 'src/**/*.js'",
     "watch": "babel -w src --out-dir ."
   },
-  "keywords": ["gatsby", "gatsby-plugin", "gatsby-source-plugin", "strapi"],
+  "keywords": [
+    "gatsby",
+    "gatsby-plugin",
+    "gatsby-source-plugin",
+    "strapi"
+  ],
   "dependencies": {
     "axios": "^0.17.1",
     "gatsby-node-helpers": "^0.1.3",

@@ -1,7 +1,7 @@
-import createNodeHelpers from "gatsby-node-helpers"
+import createNodeHelpers from 'gatsby-node-helpers'
 
 const { createNodeFactory } = createNodeHelpers({
-  typePrefix: "Strapi",
+  typePrefix: 'Strapi',
 })
 
 /**

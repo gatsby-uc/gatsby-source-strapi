@@ -1,24 +1,24 @@
-import axios from "axios"
-import fetchData from "./fetch"
-import { Node } from "./nodes"
-import { capitalize } from "lodash"
+import axios from 'axios'
+import fetchData from './fetch'
+import { Node } from './nodes'
+import { capitalize } from 'lodash'
 
 exports.sourceNodes = async (
   { boundActionCreators },
-  { apiURL = "http://localhost:1337", contentTypes = [], loginData = {} }
+  { apiURL = 'http://localhost:1337', contentTypes = [], loginData = {} }
 ) => {
   const { createNode } = boundActionCreators
   let jwtToken = null
 
   // Check if loginData is set.
   if (
-    loginData.hasOwnProperty("identifier") &&
+    loginData.hasOwnProperty('identifier') &&
     loginData.identifier.length !== 0 &&
-    loginData.hasOwnProperty("password") &&
+    loginData.hasOwnProperty('password') &&
     loginData.password.length !== 0
   ) {
-    console.time("Authenticate Strapi user")
-    console.log("Authenticate Strapi user")
+    console.time('Authenticate Strapi user')
+    console.log('Authenticate Strapi user')
 
     // Define API endpoint.
     const loginEndpoint = `${apiURL}/auth/local`
@@ -27,14 +27,14 @@ exports.sourceNodes = async (
     try {
       const loginResponse = await axios.post(loginEndpoint, loginData)
 
-      if (loginResponse.hasOwnProperty("data")) {
+      if (loginResponse.hasOwnProperty('data')) {
         jwtToken = loginResponse.data.jwt
       }
     } catch (e) {
-      console.error("Strapi authentication error: " + e)
+      console.error('Strapi authentication error: ' + e)
     }
 
-    console.timeEnd("Authenticate Strapi user")
+    console.timeEnd('Authenticate Strapi user')
   }
 
   // Generate a list of promises based on the `contentTypes` option.
