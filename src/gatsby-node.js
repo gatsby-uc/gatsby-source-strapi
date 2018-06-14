@@ -2,12 +2,13 @@ import axios from 'axios'
 import fetchData from './fetch'
 import { Node } from './nodes'
 import { capitalize } from 'lodash'
+import normalize from './normalize'
 
 exports.sourceNodes = async (
-  { boundActionCreators },
+  { store, boundActionCreators, cache },
   { apiURL = 'http://localhost:1337', contentTypes = [], loginData = {} }
 ) => {
-  const { createNode } = boundActionCreators
+  const { createNode, touchNode } = boundActionCreators
   let jwtToken = null
 
   // Check if loginData is set.
@@ -47,13 +48,21 @@ exports.sourceNodes = async (
   )
 
   // Execute the promises.
-  const data = await Promise.all(promises)
+  let entities = await Promise.all(promises)
 
-  // Create nodes.
+  entities = await normalize.downloadMediaFiles({
+    entities,
+    apiURL,
+    store,
+    cache,
+    createNode,
+    touchNode,
+    jwtToken,
+  })
+
   contentTypes.forEach((contentType, i) => {
-    const items = data[i]
-
-    items.forEach(item => {
+    const items = entities[i]
+    items.forEach((item, i) => {
       const node = Node(capitalize(contentType), item)
       createNode(node)
     })
