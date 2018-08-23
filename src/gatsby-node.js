@@ -22,7 +22,7 @@ exports.sourceNodes = async (
     console.log('Authenticate Strapi user')
 
     // Define API endpoint.
-    const loginEndpoint = `${apiURL}/auth/local`
+    const loginEndpoint = `${apiURL}/admin/plugins/users-permissions/auth/login`
 
     // Make API request.
     try {
