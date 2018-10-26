@@ -1,7 +1,8 @@
 *.log
+/fetch.js
 /gatsby-node.js
 /nodes.js
-/fetch.js
+/normalize.js
 /yarn.lock
 node_modules
 .idea
