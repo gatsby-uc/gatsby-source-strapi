@@ -1,6 +1,6 @@
 {
   "name": "gatsby-source-strapi",
-  "version": "0.0.4",
+  "version": "0.0.3",
   "description": "Gatsby source plugin for building websites using Strapi as a data source",
   "author": {
     "email": "hi@strapi.io",
@@ -39,7 +39,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "gatsby-node-helpers": "^0.3.0",
-    "gatsby-source-filesystem": "^2.0.5",
+    "gatsby-source-filesystem": "^1.5.39",
     "lodash": "^4.17.11",
     "pluralize": "^7.0.0"
   },
