@@ -7,7 +7,7 @@ module.exports = async ({ apiURL, contentType, jwtToken }) => {
   console.log(`Starting to fetch data from Strapi (${pluralize(contentType)})`)
 
   // Define API endpoint.
-  const apiEndpoint = `${apiURL}/${pluralize(contentType)}`
+  const apiEndpoint = `${apiURL}/${pluralize(contentType)}?_limit=0`
 
   // Set authorization token
   let fetchRequestConfig = {}
