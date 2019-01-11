@@ -14,6 +14,6 @@ const { createNodeFactory } = createNodeHelpers({
  */
 export const Node = (type, node) =>
   createNodeFactory(type, node => {
-    node.id = node.strapiId
+    node.id = `${type}_${node.strapiId}`
     return node
   })(node)

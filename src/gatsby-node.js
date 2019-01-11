@@ -6,7 +6,7 @@ import normalize from './normalize'
 
 exports.sourceNodes = async (
   { store, boundActionCreators, cache },
-  { apiURL = 'http://localhost:1337', contentTypes = [], loginData = {} }
+  { apiURL = 'http://localhost:1337', contentTypes = [], loginData = {}, queryLimit = 0 }
 ) => {
   const { createNode, touchNode } = boundActionCreators
   let jwtToken = null
@@ -44,6 +44,7 @@ exports.sourceNodes = async (
       apiURL,
       contentType,
       jwtToken,
+      queryLimit,
     })
   )
 
