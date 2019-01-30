@@ -95,3 +95,32 @@ exports.downloadMediaFiles = async ({
       return entity
     })
   )
+
+const insertNodes = async (createNodeId, relation, item) => {
+  for (const key of Object.keys(relation)) {
+    if (item.hasOwnProperty(key)) {
+      const field = item[key]
+      const target = relation[key]
+
+      if (Array.isArray(field)) {
+        item[`${key}___NODE`] = (field || []).map(node =>
+          createNodeId(`${target}-${node.id}`)
+        )
+      } else {
+        item[`${key}___NODE`] = createNodeId(`${target}-${field.id}`)
+      }
+    }
+  }
+}
+
+// Add nodes to entities based on relations
+exports.addReferenceNodes = async ({ entities, createNodeId, relations }) =>
+  Promise.all(
+    entities.map(async (entity, index) => {
+      for (let item of entity) {
+        // loop item over fields
+        await insertNodes(createNodeId, relations[index], item)
+      }
+      return entity
+    })
+  )

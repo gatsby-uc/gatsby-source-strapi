@@ -1,14 +1,15 @@
 import axios from 'axios'
 import fetchData from './fetch'
+import fetchRelations from './relations'
 import { Node } from './nodes'
 import { capitalize } from 'lodash'
 import normalize from './normalize'
 
 exports.sourceNodes = async (
-  { store, boundActionCreators, cache },
+  { store, actions, cache, createNodeId },
   { apiURL = 'http://localhost:1337', contentTypes = [], loginData = {} }
 ) => {
-  const { createNode, touchNode } = boundActionCreators
+  const { createNode, touchNode } = actions
   let jwtToken = null
 
   // Check if loginData is set.
@@ -38,6 +39,13 @@ exports.sourceNodes = async (
     console.timeEnd('Authenticate Strapi user')
   }
 
+  // Get the relation of models
+  let relations = await fetchRelations({
+    apiURL,
+    contentTypes,
+    jwtToken,
+  })
+
   // Generate a list of promises based on the `contentTypes` option.
   const promises = contentTypes.map(contentType =>
     fetchData({
@@ -60,10 +68,17 @@ exports.sourceNodes = async (
     jwtToken,
   })
 
+  entities = await normalize.addReferenceNodes({
+    entities,
+    createNodeId,
+    relations,
+  })
+
   contentTypes.forEach((contentType, i) => {
     const items = entities[i]
     items.forEach((item, i) => {
       const node = Node(capitalize(contentType), item)
+      node.id = createNodeId(`${contentType}-${node.id}`)
       createNode(node)
     })
   })
