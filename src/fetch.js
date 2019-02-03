@@ -2,12 +2,12 @@ import axios from 'axios'
 import { isObject, startsWith, forEach } from 'lodash'
 import pluralize from 'pluralize'
 
-module.exports = async ({ apiURL, contentType, jwtToken }) => {
+module.exports = async ({ apiURL, contentType, jwtToken, queryLimit }) => {
   console.time('Fetch Strapi data')
   console.log(`Starting to fetch data from Strapi (${pluralize(contentType)})`)
 
   // Define API endpoint.
-  const apiEndpoint = `${apiURL}/${pluralize(contentType)}?_limit=0`
+  const apiEndpoint = `${apiURL}/${pluralize(contentType)}?_limit=${queryLimit}`
 
   // Set authorization token
   let fetchRequestConfig = {}
