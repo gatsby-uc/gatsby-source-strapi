@@ -10,7 +10,7 @@ exports.sourceNodes = async (
     apiURL = 'http://localhost:1337',
     contentTypes = [],
     loginData = {},
-    queryLimit = 0,
+    queryLimit = 100,
   }
 ) => {
   const { createNode, touchNode } = boundActionCreators
