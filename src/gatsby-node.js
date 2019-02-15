@@ -6,7 +6,7 @@ import { capitalize } from 'lodash'
 import normalize from './normalize'
 
 exports.sourceNodes = async (
-  { store, actions, createNodeId, cache },
+  { store, actions, cache },
   {
     apiURL = 'http://localhost:1337',
     contentTypes = [],
@@ -76,7 +76,6 @@ exports.sourceNodes = async (
 
   entities = await normalize.addReferenceNodes({
     entities,
-    createNodeId,
     relations,
   })
 
@@ -84,7 +83,6 @@ exports.sourceNodes = async (
     const items = entities[i]
     items.forEach((item, i) => {
       const node = Node(capitalize(contentType), item)
-      //node.id = createNodeId(`${contentType}-${node.id}`)
       createNode(node)
     })
   })
