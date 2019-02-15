@@ -1,4 +1,5 @@
-const { createRemoteFileNode } = require(`gatsby-source-filesystem`)
+import { createRemoteFileNode } from 'gatsby-source-filesystem'
+import { capitalize } from 'lodash'
 
 const extractFields = async (
   apiURL,
@@ -96,30 +97,30 @@ exports.downloadMediaFiles = async ({
     })
   )
 
-const insertNodes = async (createNodeId, relation, item) => {
+const insertNodes = async (relation, item) => {
   for (const key of Object.keys(relation)) {
     if (item.hasOwnProperty(key)) {
       const field = item[key]
-      const target = relation[key]
+      const target = capitalize(relation[key])
 
       if (Array.isArray(field)) {
-        item[`${key}___NODE`] = (field || []).map(node =>
-          createNodeId(`${target}-${node.id}`)
+        item[`${key}___NODE`] = (field || []).map(
+          node => `${target}_${node.id}`
         )
       } else {
-        item[`${key}___NODE`] = createNodeId(`${target}-${field.id}`)
+        item[`${key}___NODE`] = `${target}_${field.id}`
       }
     }
   }
 }
 
 // Add nodes to entities based on relations
-exports.addReferenceNodes = async ({ entities, createNodeId, relations }) =>
+exports.addReferenceNodes = async ({ entities, relations }) =>
   Promise.all(
     entities.map(async (entity, index) => {
       for (let item of entity) {
         // loop item over fields
-        await insertNodes(createNodeId, relations[index], item)
+        await insertNodes(relations[index], item)
       }
       return entity
     })

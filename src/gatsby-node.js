@@ -6,8 +6,13 @@ import { capitalize } from 'lodash'
 import normalize from './normalize'
 
 exports.sourceNodes = async (
-  { store, actions, cache, createNodeId },
-  { apiURL = 'http://localhost:1337', contentTypes = [], loginData = {} }
+  { store, actions, createNodeId, cache },
+  {
+    apiURL = 'http://localhost:1337',
+    contentTypes = [],
+    loginData = {},
+    queryLimit = 100,
+  }
 ) => {
   const { createNode, touchNode } = actions
   let jwtToken = null
@@ -52,6 +57,7 @@ exports.sourceNodes = async (
       apiURL,
       contentType,
       jwtToken,
+      queryLimit,
     })
   )
 
@@ -78,7 +84,7 @@ exports.sourceNodes = async (
     const items = entities[i]
     items.forEach((item, i) => {
       const node = Node(capitalize(contentType), item)
-      node.id = createNodeId(`${contentType}-${node.id}`)
+      //node.id = createNodeId(`${contentType}-${node.id}`)
       createNode(node)
     })
   })
