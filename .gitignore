@@ -2,8 +2,8 @@
 /fetch.js
 /gatsby-node.js
 /nodes.js
+/models.js
 /normalize.js
-/relations.js
 /yarn.lock
 node_modules
 .idea
