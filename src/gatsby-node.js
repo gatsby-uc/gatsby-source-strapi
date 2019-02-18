@@ -1,6 +1,6 @@
 import axios from 'axios'
 import fetchData from './fetch'
-import fetchRelations from './relations'
+import fetchModles from './models'
 import { Node } from './nodes'
 import { capitalize } from 'lodash'
 import normalize from './normalize'
@@ -45,7 +45,7 @@ exports.sourceNodes = async (
   }
 
   // Get the relation of models
-  let relations = await fetchRelations({
+  let { relations } = await fetchModles({
     apiURL,
     contentTypes,
     jwtToken,

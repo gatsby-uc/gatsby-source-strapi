@@ -18,15 +18,17 @@ module.exports = async ({ apiURL, contentTypes, jwtToken }) => {
   // Make API request.
   const documents = await axios(modelsEndpoint, fetchRequestConfig)
 
-  // Query all documents from client.
+  // Query models from client.
   console.timeEnd(`Fetch Strapi models`)
 
   const isValidTarget = isValidContentType(contentTypes)
 
-  // Map and clean data.
-  return contentTypes.map(contentType =>
-    extract(contentType, documents.data.models.models, isValidTarget)
+  // Get all Rrelations.
+  const relations = contentTypes.map(contentType =>
+    extractRelation(contentType, documents.data.models.models, isValidTarget)
   )
+
+  return { relations }
 }
 
 // Only include required Content Types specified in config
@@ -35,7 +37,7 @@ const isValidContentType = contentTypes => {
 }
 
 // Extract relation of Content Type from fetch result
-const extract = (contentType, models, isValidTarget) => {
+const extractRelation = (contentType, models, isValidTarget) => {
   const associations = getAssociations(contentType, models)
 
   const relation = {}
