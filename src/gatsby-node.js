@@ -5,7 +5,7 @@ import { capitalize } from 'lodash'
 import normalize from './normalize'
 
 exports.sourceNodes = async (
-  { store, boundActionCreators, cache },
+  { store, boundActionCreators, createNodeId, cache },
   {
     apiURL = 'http://localhost:1337',
     contentTypes = [],
@@ -62,6 +62,7 @@ exports.sourceNodes = async (
     store,
     cache,
     createNode,
+    createNodeId,
     touchNode,
     jwtToken,
   })

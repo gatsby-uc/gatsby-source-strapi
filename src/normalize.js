@@ -5,6 +5,7 @@ const extractFields = async (
   store,
   cache,
   createNode,
+  createNodeId,
   touchNode,
   auth,
   item
@@ -15,7 +16,16 @@ const extractFields = async (
       // add recursion to fetch nested strapi references
       await Promise.all(
         field.map(async f =>
-          extractFields(apiURL, store, cache, createNode, touchNode, auth, f)
+          extractFields(
+            apiURL,
+            store,
+            cache,
+            createNode,
+            createNodeId,
+            touchNode,
+            auth,
+            f
+          )
         )
       )
     } else {
@@ -44,6 +54,7 @@ const extractFields = async (
               store,
               cache,
               createNode,
+              createNodeId,
               auth,
             })
 
@@ -75,6 +86,7 @@ exports.downloadMediaFiles = async ({
   store,
   cache,
   createNode,
+  createNodeId,
   touchNode,
   jwtToken: auth,
 }) =>
@@ -87,6 +99,7 @@ exports.downloadMediaFiles = async ({
           store,
           cache,
           createNode,
+          createNodeId,
           touchNode,
           auth,
           item
