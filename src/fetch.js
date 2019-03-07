@@ -2,15 +2,22 @@ import axios from 'axios'
 import { isObject, startsWith, forEach } from 'lodash'
 import pluralize from 'pluralize'
 
+const TIME_PREFIX = 'Fetch Strapi data';
+
 module.exports = async ({ apiURL, contentType, jwtToken, queryLimit }) => {
-  console.time('Fetch Strapi data')
-  console.log(`Starting to fetch data from Strapi (${pluralize(contentType)})`)
+  const contentTypePlural = pluralize(contentType);
+  const timeLabel = `${TIME_PREFIX}: ${contentTypePlural}`;
+
+  console.time(timeLabel)
+
+  console.log(`Starting to fetch data from Strapi (${contentTypePlural})`)
 
   // Define API endpoint.
-  const apiEndpoint = `${apiURL}/${pluralize(contentType)}?_limit=${queryLimit}`
+  const apiEndpoint = `${apiURL}/${contentTypePlural}?_limit=${queryLimit}`
 
   // Set authorization token
   let fetchRequestConfig = {}
+
   if (jwtToken !== null) {
     fetchRequestConfig.headers = {
       Authorization: `Bearer ${jwtToken}`,
@@ -21,7 +28,7 @@ module.exports = async ({ apiURL, contentType, jwtToken, queryLimit }) => {
   const documents = await axios(apiEndpoint, fetchRequestConfig)
 
   // Query all documents from client.
-  console.timeEnd('Fetch Strapi data')
+  console.timeEnd(timeLabel)
 
   // Map and clean data.
   return documents.data.map(item => clean(item))
