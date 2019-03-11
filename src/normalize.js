@@ -38,7 +38,7 @@ const extractFields = async (
       // previously created file node to not try to redownload
       if (cacheMediaData && field.updatedAt === cacheMediaData.updatedAt) {
         fileNodeID = cacheMediaData.fileNodeID
-        touchNode(cacheMediaData.fileNodeID)
+        touchNode({ nodeId: cacheMediaData.fileNodeID })
       }
 
       // If we don't have cached data, download the file
@@ -61,7 +61,7 @@ const extractFields = async (
 
             await cache.set(mediaDataCacheKey, {
               fileNodeID,
-              modified: field.updatedAt,
+              updatedAt: field.updatedAt,
             })
           }
         } catch (e) {
