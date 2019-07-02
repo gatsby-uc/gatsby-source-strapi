@@ -5,7 +5,7 @@ import { capitalize } from 'lodash'
 import normalize from './normalize'
 
 exports.sourceNodes = async (
-  { store, boundActionCreators, cache },
+  { store, actions, cache },
   {
     apiURL = 'http://localhost:1337',
     contentTypes = [],
@@ -13,7 +13,7 @@ exports.sourceNodes = async (
     queryLimit = 100,
   }
 ) => {
-  const { createNode, touchNode } = boundActionCreators
+  const { createNode, touchNode } = actions
   let jwtToken = null
 
   // Check if loginData is set.
