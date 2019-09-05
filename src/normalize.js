@@ -1,3 +1,4 @@
+const path = require(`path`)
 const { createRemoteFileNode } = require(`gatsby-source-filesystem`)
 
 const extractFields = async (
@@ -5,6 +6,7 @@ const extractFields = async (
   store,
   cache,
   createNode,
+  createNodeId,
   touchNode,
   auth,
   item
@@ -15,7 +17,16 @@ const extractFields = async (
       // add recursion to fetch nested strapi references
       await Promise.all(
         field.map(async f =>
-          extractFields(apiURL, store, cache, createNode, touchNode, auth, f)
+          extractFields(
+            apiURL,
+            store,
+            cache,
+            createNode,
+            createNodeId,
+            touchNode,
+            auth,
+            f
+          )
         )
       )
     } else {
@@ -46,7 +57,9 @@ const extractFields = async (
               store,
               cache,
               createNode,
+              createNodeId,
               auth,
+              name: path.parse(field.name).name,
             })
 
             // If we don't have cached data, download the file
@@ -55,7 +68,7 @@ const extractFields = async (
 
               await cache.set(mediaDataCacheKey, {
                 fileNodeID,
-                modified: field.updatedAt,
+                updatedAt: field.updatedAt,
               })
             }
           } catch (e) {
@@ -77,6 +90,7 @@ exports.downloadMediaFiles = async ({
   store,
   cache,
   createNode,
+  createNodeId,
   touchNode,
   jwtToken: auth,
 }) =>
@@ -89,6 +103,7 @@ exports.downloadMediaFiles = async ({
           store,
           cache,
           createNode,
+          createNodeId,
           touchNode,
           auth,
           item
