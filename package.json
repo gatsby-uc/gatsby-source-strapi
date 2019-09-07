@@ -1,7 +1,7 @@
 {
-  "name": "gatsby-source-strapi",
-  "version": "0.0.9",
-  "description": "Gatsby source plugin for building websites using Strapi as a data source",
+  "name": "@joshdcuneo/gatsby-source-strapi",
+  "version": "0.0.1",
+  "description": "A fork of the official Gatsby source plugin for building websites using Strapi as a data source with some upgrades and fixes",
   "author": {
     "email": "hi@strapi.io",
     "name": "Strapi Solutions",
@@ -9,20 +9,18 @@
   },
   "maintainers": [
     {
-      "name": "Strapi Solutions",
-      "email": "hi@strapi.io",
-      "url": "http://strapi.io"
+      "name": "Josh Cuneo",
+      "email": "joshdcuneo@gmail.com"
     }
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/strapi/gatsby-source-strapi.git"
+    "url": "git://github.com/joshdcuneo/gatsby-source-strapi.git"
   },
   "bugs": {
-    "url": "https://github.com/strapi/gatsby-source-strapi/issues"
+    "url": "https://github.com/joshdcuneo/gatsby-source-strapi/issues"
   },
   "license": "MIT",
-  "homepage": "http://strapi.io",
   "scripts": {
     "prepublish": "npm run build",
     "build": "babel src --out-dir .",
