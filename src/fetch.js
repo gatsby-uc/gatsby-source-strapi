@@ -3,7 +3,8 @@ import { isObject, startsWith, forEach } from 'lodash'
 import pluralize from 'pluralize'
 
 module.exports = async ({ apiURL, contentType, jwtToken, queryLimit }) => {
-  console.time('Fetch Strapi data')
+  const timer = `Fetch Strapi data for ${pluralize(contentType)}`
+  console.time(timer)
   console.log(`Starting to fetch data from Strapi (${pluralize(contentType)})`)
 
   // Define API endpoint.
@@ -21,7 +22,7 @@ module.exports = async ({ apiURL, contentType, jwtToken, queryLimit }) => {
   const documents = await axios(apiEndpoint, fetchRequestConfig)
 
   // Query all documents from client.
-  console.timeEnd('Fetch Strapi data')
+  console.timeEnd(timer)
 
   // Map and clean data.
   return documents.data.map(item => clean(item))
