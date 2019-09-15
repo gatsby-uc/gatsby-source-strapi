@@ -1,6 +1,6 @@
 {
   "name": "@joshdcuneo/gatsby-source-strapi",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A fork of the official Gatsby source plugin for building websites using Strapi as a data source with some upgrades and fixes",
   "author": {
     "email": "hi@strapi.io",
