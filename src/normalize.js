@@ -1,14 +1,14 @@
 const { createRemoteFileNode } = require(`gatsby-source-filesystem`)
 
-const extractFields = async (
+const extractFields = async ({
   apiURL,
   store,
   cache,
   createNode,
   touchNode,
   auth,
-  item
-) => {
+  item,
+}) => {
   for (const key of Object.keys(item)) {
     const field = item[key]
     // handle multiple files
@@ -16,7 +16,7 @@ const extractFields = async (
       if (field && field[0] && field[0].hasOwnProperty('mime')) {
         await Promise.all(
           field.map(async f =>
-            extractFile(
+            extractFile({
               apiURL,
               store,
               cache,
@@ -25,22 +25,30 @@ const extractFields = async (
               auth,
               item,
               key,
-              f
-            )
+              file: f,
+            })
           )
         )
       }
       // add recursion to fetch nested strapi references
       await Promise.all(
         field.map(async f =>
-          extractFields(apiURL, store, cache, createNode, touchNode, auth, f)
+          extractFields({
+            apiURL,
+            store,
+            cache,
+            createNode,
+            touchNode,
+            auth,
+            item: f,
+          })
         )
       )
     } else {
       // file fields have a mime property among other
       // maybe should find a better test
       if (field !== null && field.hasOwnProperty('mime')) {
-        await extractFile(
+        await extractFile({
           apiURL,
           store,
           cache,
@@ -49,14 +57,14 @@ const extractFields = async (
           auth,
           item,
           key,
-          field
-        )
+          file: field,
+        })
       }
     }
   }
 }
 
-const extractFile = async (
+const extractFile = async ({
   apiURL,
   store,
   cache,
@@ -65,8 +73,8 @@ const extractFile = async (
   auth,
   item,
   key,
-  file
-) => {
+  file,
+}) => {
   let fileNodeID
   // using field on the cache key for multiple image field
   const mediaDataCacheKey = `strapi-media-${file.id}-${key}`
@@ -93,6 +101,7 @@ const extractFile = async (
         cache,
         createNode,
         auth,
+        parentNodeId: item.id,
       })
 
       // If we don't have cached data, download the file
@@ -108,6 +117,7 @@ const extractFile = async (
       // Ignore
     }
   }
+  file.localFile___NODE = fileNodeID
 }
 
 // Downloads media from image type fields
@@ -124,15 +134,15 @@ exports.downloadMediaFiles = async ({
     entities.map(async entity => {
       for (let item of entity) {
         // loop item over fields
-        await extractFields(
+        await extractFields({
           apiURL,
           store,
           cache,
           createNode,
           touchNode,
           auth,
-          item
-        )
+          item,
+        })
       }
       return entity
     })
