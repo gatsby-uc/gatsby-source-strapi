@@ -23,7 +23,9 @@ exports.sourceNodes = async (
     loginData.hasOwnProperty('password') &&
     loginData.password.length !== 0
   ) {
-    const authenticationActivity = reporter.activityTimer(`Authenticate Strapi User`)
+    const authenticationActivity = reporter.activityTimer(
+      `Authenticate Strapi User`
+    )
     authenticationActivity.start()
 
     // Define API endpoint.
@@ -53,7 +55,7 @@ exports.sourceNodes = async (
       contentType,
       jwtToken,
       queryLimit,
-      reporter
+      reporter,
     })
   )
 

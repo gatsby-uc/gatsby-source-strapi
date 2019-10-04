@@ -2,7 +2,13 @@ import axios from 'axios'
 import { isObject, startsWith, forEach } from 'lodash'
 import pluralize from 'pluralize'
 
-module.exports = async ({ apiURL, contentType, jwtToken, queryLimit, reporter }) => {
+module.exports = async ({
+  apiURL,
+  contentType,
+  jwtToken,
+  queryLimit,
+  reporter,
+}) => {
   // Define API endpoint.
   const apiBase = `${apiURL}/${pluralize(contentType)}`
   const apiEndpoint = `${apiBase}?_limit=${queryLimit}`
