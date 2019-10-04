@@ -57,7 +57,7 @@ exports.sourceNodes = async (
     })
   )
 
-   // Execute the promises.
+  // Execute the promises.
   let entities = await Promise.all(promises)
 
   entities = await normalize.downloadMediaFiles({
