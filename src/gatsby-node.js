@@ -5,7 +5,7 @@ import { capitalize } from 'lodash'
 import normalize from './normalize'
 
 exports.sourceNodes = async (
-  { store, boundActionCreators, cache },
+  { store, boundActionCreators, cache, reporter },
   {
     apiURL = 'http://localhost:1337',
     contentTypes = [],
@@ -23,8 +23,8 @@ exports.sourceNodes = async (
     loginData.hasOwnProperty('password') &&
     loginData.password.length !== 0
   ) {
-    console.time('Authenticate Strapi user')
-    console.log('Authenticate Strapi user')
+    const authenticationActivity = reporter.activityTimer(`Authenticate Strapi User`)
+    authenticationActivity.start()
 
     // Define API endpoint.
     const loginEndpoint = `${apiURL}/auth/local`
@@ -37,11 +37,14 @@ exports.sourceNodes = async (
         jwtToken = loginResponse.data.jwt
       }
     } catch (e) {
-      console.error('Strapi authentication error: ' + e)
+      reporter.panic('Strapi authentication error: ' + e)
     }
 
-    console.timeEnd('Authenticate Strapi user')
+    authenticationActivity.end()
   }
+
+  const fetchActivity = reporter.activityTimer(`Fetched Strapi Data`)
+  fetchActivity.start()
 
   // Generate a list of promises based on the `contentTypes` option.
   const promises = contentTypes.map(contentType =>
@@ -50,6 +53,7 @@ exports.sourceNodes = async (
       contentType,
       jwtToken,
       queryLimit,
+      reporter
     })
   )
 
@@ -73,4 +77,6 @@ exports.sourceNodes = async (
       createNode(node)
     })
   })
+
+  fetchActivity.end()
 }
