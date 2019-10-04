@@ -4,8 +4,8 @@ import pluralize from 'pluralize'
 
 module.exports = async ({ apiURL, contentType, jwtToken, queryLimit, reporter }) => {
   // Define API endpoint.
-  const apiBase = `${apiURL}/${pluralize(contentType)}`,
-        apiEndpoint = `${apiBase}?_limit=${queryLimit}`
+  const apiBase = `${apiURL}/${pluralize(contentType)}`
+  const apiEndpoint = `${apiBase}?_limit=${queryLimit}`
 
   reporter.info(`Starting to fetch data from Strapi - ${apiBase}`)
 
