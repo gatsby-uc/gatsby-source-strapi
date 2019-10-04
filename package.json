@@ -1,6 +1,6 @@
 {
   "name": "gatsby-source-strapi",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Gatsby source plugin for building websites using Strapi as a data source",
   "author": {
     "email": "hi@strapi.io",
