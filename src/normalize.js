@@ -13,7 +13,7 @@ const extractFields = async (
 ) => {
   // image fields have a mime property among other
   // maybe should find a better test
-  if(item && item.hasOwnProperty('mime')) {
+  if (item && item.hasOwnProperty('mime')) {
     let fileNodeID
     // using field on the cache key for multiple image field
     const mediaDataCacheKey = `strapi-media-${item.id}-${key}`
@@ -32,7 +32,7 @@ const extractFields = async (
         // full media url
         const source_url = `${item.url.startsWith('http') ? '' : apiURL}${
           item.url
-          }`
+        }`
         const fileNode = await createRemoteFileNode({
           url: source_url,
           store,
@@ -57,13 +57,13 @@ const extractFields = async (
     }
 
     if (fileNodeID) {
-      if(key === 'localFile') {
-        item[`${key}___NODE`] = fileNodeID
+      if (key !== 'localFile') {
+        return fileNodeID
       }
 
-      return fileNodeID
+      item.localFile___NODE = fileNodeID
     }
-  } else if(Array.isArray(item)) {
+  } else if (Array.isArray(item)) {
     await Promise.all(
       item.map(async f =>
         extractFields(
@@ -78,8 +78,8 @@ const extractFields = async (
         )
       )
     )
-  } else if(item && typeof item === 'object') {
-    for(const key of Object.keys(item)) {
+  } else if (item && typeof item === 'object') {
+    for (const key of Object.keys(item)) {
       const field = item[key]
 
       const fileNodeID = await extractFields(
