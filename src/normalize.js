@@ -48,7 +48,7 @@ const extractFields = async (
 
           await cache.set(mediaDataCacheKey, {
             fileNodeID,
-            modified: item.updatedAt,
+            updatedAt: item.updatedAt,
           })
         }
       } catch (e) {
