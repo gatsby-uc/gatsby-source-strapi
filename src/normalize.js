@@ -21,7 +21,12 @@ const extractFields = async (
     } else {
       // image fields have a mime property among other
       // maybe should find a better test
-      if (field !== null && field.hasOwnProperty('mime')) {
+      if (
+        field !== null &&
+        field.hasOwnProperty('mime') &&
+        field.hasOwnProperty('provider') &&
+        field.provider === 'local'
+      ) {
         let fileNodeID
         // using field on the cache key for multiple image field
         const mediaDataCacheKey = `strapi-media-${item.id}-${key}`
