@@ -31,14 +31,16 @@ const extractFields = async (
         // previously created file node to not try to redownload
         if (cacheMediaData && field.updatedAt === cacheMediaData.updatedAt) {
           fileNodeID = cacheMediaData.fileNodeID
-          touchNode(cacheMediaData.fileNodeID)
+          touchNode({ nodeId: cacheMediaData.fileNodeID })
         }
 
         // If we don't have cached data, download the file
         if (!fileNodeID) {
           try {
             // full media url
-            const source_url = apiURL + field.url
+            const source_url = `${field.url.startsWith('http') ? '' : apiURL}${
+              field.url
+            }`
             const fileNode = await createRemoteFileNode({
               url: source_url,
               store,
