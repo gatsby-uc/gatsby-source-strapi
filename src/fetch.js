@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { isObject, startsWith, forEach } from 'lodash'
+import { isObject, startsWith, endsWith, forEach } from 'lodash'
 import pluralize from 'pluralize'
 
 module.exports = async ({
@@ -38,7 +38,10 @@ module.exports = async ({
  */
 const clean = item => {
   forEach(item, (value, key) => {
-    if (startsWith(key, `__`)) {
+    if (endsWith(key, `component`)) {
+      item.component = item[key]
+      delete item[key]
+    } else if (startsWith(key, `__`)) {
       delete item[key]
     } else if (startsWith(key, `_`)) {
       delete item[key]
