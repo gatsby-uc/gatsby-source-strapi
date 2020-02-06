@@ -37,10 +37,10 @@
     "strapi"
   ],
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.18.1",
     "gatsby-node-helpers": "^0.3.0",
     "gatsby-source-filesystem": "^1.5.39",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.15",
     "pluralize": "^7.0.0"
   },
   "devDependencies": {
