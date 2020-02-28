@@ -3,6 +3,7 @@
 /gatsby-node.js
 /nodes.js
 /normalize.js
+/authentication.js
 /yarn.lock
 node_modules
 .idea
