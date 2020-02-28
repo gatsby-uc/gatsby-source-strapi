@@ -27,7 +27,6 @@ const extractFields = async (
         const mediaDataCacheKey = `strapi-media-${item.id}-${key}`
         const cacheMediaData = await cache.get(mediaDataCacheKey)
 
-
         // If we have cached media data and it wasn't modified, reuse
         // previously created file node to not try to redownload
         if (cacheMediaData && field.updated_at === cacheMediaData.updated_at) {

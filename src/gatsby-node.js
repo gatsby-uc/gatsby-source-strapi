@@ -26,7 +26,6 @@ exports.sourceNodes = async (
 ) => {
   const { createNode, deleteNode, touchNode } = actions
 
-  console.log("WORKING");
 
   // Authentication function
   let jwtToken = await authentication({ loginData, reporter, apiURL })
@@ -79,7 +78,7 @@ exports.sourceNodes = async (
     items.forEach((item, i) => {
       const node = Node(capitalize(contentType), item)
       // Adding new created nodes in an Array
-      newNodes.push(node);
+      newNodes.push(node)
 
       // Create nodes
       createNode(node)
