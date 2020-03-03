@@ -6,17 +6,7 @@ import normalize from './normalize'
 import authentication from './authentication'
 
 exports.sourceNodes = async (
-  {
-    store,
-    actions,
-    cache,
-    reporter,
-    createContentDigest,
-    createNodeId,
-    getNode,
-    getNodes,
-    getNodesByType,
-  },
+  { store, actions, cache, reporter, getNode, getNodes },
   {
     apiURL = 'http://localhost:1337',
     contentTypes = [],
@@ -25,7 +15,6 @@ exports.sourceNodes = async (
   }
 ) => {
   const { createNode, deleteNode, touchNode } = actions
-
 
   // Authentication function
   let jwtToken = await authentication({ loginData, reporter, apiURL })

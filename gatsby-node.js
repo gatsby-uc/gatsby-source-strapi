@@ -40,11 +40,8 @@ exports.sourceNodes = function () {
         actions = _ref2.actions,
         cache = _ref2.cache,
         reporter = _ref2.reporter,
-        createContentDigest = _ref2.createContentDigest,
-        createNodeId = _ref2.createNodeId,
         getNode = _ref2.getNode,
-        getNodes = _ref2.getNodes,
-        getNodesByType = _ref2.getNodesByType;
+        getNodes = _ref2.getNodes;
     var _ref3$apiURL = _ref3.apiURL,
         apiURL = _ref3$apiURL === undefined ? 'http://localhost:1337' : _ref3$apiURL,
         _ref3$contentTypes = _ref3.contentTypes,
