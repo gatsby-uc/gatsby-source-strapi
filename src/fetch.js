@@ -12,7 +12,9 @@ module.exports = async ({
 }) => {
   // Define API endpoint.
   // either contentType / singleType needs to be present
-  const apiEndpoint = contentType ? `${apiURL}/${pluralize(contentType)}?_limit=${queryLimit}` : `${apiURL}/${singleType}`
+  const apiEndpoint = contentType
+    ? `${apiURL}/${pluralize(contentType)}?_limit=${queryLimit}`
+    : `${apiURL}/${singleType}`
 
   reporter.info(`Starting to fetch data from Strapi - ${apiEndpoint}`)
 
