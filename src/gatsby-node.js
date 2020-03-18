@@ -65,6 +65,7 @@ exports.sourceNodes = async (
   contentTypes.forEach((contentType, i) => {
     const items = entities[i]
     items.forEach((item, i) => {
+      console.log(item)
       const node = Node(capitalize(contentType), item)
       // Adding new created nodes in an Array
       newNodes.push(node)
