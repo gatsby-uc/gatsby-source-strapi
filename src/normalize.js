@@ -22,7 +22,7 @@ const extractFields = async (
   for (const key of Object.keys(item)) {
     const field = item[key]
 
-    if (Array.isArray(field) && !field.some(f => f.hasOwnProperty('mime'))) {
+    if (Array.isArray(field) && !isImageOrImages(field)) {
       // add recursion to fetch nested strapi references
       await Promise.all(
         field.map(async f =>
