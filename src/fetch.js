@@ -5,24 +5,17 @@ import pluralize from 'pluralize'
 module.exports = async ({
   apiURL,
   contentType,
+  singleType,
   jwtToken,
   queryLimit,
-  reporter,
-  isSingleType
+  reporter
 }) => {
   // Define API endpoint.
-  let apiBase = ``
-
-  if(isSingleType){
-    apiBase = `${apiURL}/${contentType}`
-  }
-  else{
-    apiBase = `${apiURL}/${pluralize(contentType)}`
-  }
+  let apiBase = singleType ? `${apiURL}/${singleType}` : `${apiURL}/${pluralize(contentType)}`
   
   const apiEndpoint = `${apiBase}?_limit=${queryLimit}`
 
-  reporter.info(`Starting to fetch data from Strapi - ${apiBase}`)
+  reporter.info(`Starting to fetch data from Strapi - ${apiEndpoint}`)
 
   // Set authorization token
   let fetchRequestConfig = {}
@@ -35,12 +28,11 @@ module.exports = async ({
   // Make API request.
   const documents = await axios(apiEndpoint, fetchRequestConfig)
 
-   // Make sure response is an array for single type instances
-   const response = documents.data.length ? documents.data : [ documents.data ]
+  // Make sure response is an array for single type instances
+  const response = documents.data.length ? documents.data : [ documents.data ]
 
-   // Map and clean data.
-   let test = response.map(item => clean(item))
-   return test
+  // Map and clean data.
+  return response.map(item => clean(item))
 }
 
 /**
@@ -49,7 +41,7 @@ module.exports = async ({
  * @param {object} item - Entry needing clean
  * @returns {object} output - Object cleaned
  */
-const clean = item => {
+const clean = (item, singleType) => {
   forEach(item, (value, key) => {
     if (startsWith(key, `__`)) {
       delete item[key]

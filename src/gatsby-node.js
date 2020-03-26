@@ -5,7 +5,7 @@ import { capitalize } from 'lodash'
 import normalize from './normalize'
 
 exports.sourceNodes = async (
-  { store, boundActionCreators, cache, reporter },
+  { store, actions, cache, reporter },
   {
     apiURL = 'http://localhost:1337',
     contentTypes = [],
@@ -14,7 +14,7 @@ exports.sourceNodes = async (
     queryLimit = 100,
   }
 ) => {
-  const { createNode, touchNode } = boundActionCreators
+  const { createNode, touchNode } = actions
   let jwtToken = null
 
   // Check if loginData is set.
@@ -50,32 +50,31 @@ exports.sourceNodes = async (
   fetchActivity.start()
 
   // Generate a list of promises based on the `contentTypes` option.
-  const promises = contentTypes.map(contentType =>
+  const contentTypePromises = contentTypes.map(contentType =>
     fetchData({
       apiURL,
       contentType,
       jwtToken,
       queryLimit,
-      reporter,
-      isSingleType: false
+      reporter
     })
   )
 
-  // Add single types to the list of promises
-  singleTypes.map(contentType =>
-    promises.push(fetchData({
+  // Generate a list of promises based on the `singleTypes` option.
+  const singleTypePromises = singleTypes.map(singleType =>
+    fetchData({
       apiURL,
-      contentType,
+      singleType,
       jwtToken,
-      queryLimit,
-      reporter,
-      isSingleType: true
-    }))
+      reporter
+    })
   )
-  
 
-  // Execute the promises.
-  let entities = await Promise.all(promises)
+  // Execute the promises
+  let entities = await Promise.all([
+    ...contentTypePromises,
+    ...singleTypePromises,
+  ])
 
   entities = await normalize.downloadMediaFiles({
     entities,
@@ -86,13 +85,9 @@ exports.sourceNodes = async (
     touchNode,
     jwtToken,
   })
-
-  //merge contentTypes and singleTypes
-  singleTypes.forEach((item) => {
-    contentTypes.push(item);
-  })
   
-  contentTypes.forEach((contentType, i) => {
+  // Merge single and content types and retrieve create nodes
+  contentTypes.concat(singleTypes).forEach((contentType, i) => {
     const items = entities[i]
     items.forEach((item, i) => {
       const node = Node(capitalize(contentType), item)
