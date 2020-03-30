@@ -41,6 +41,7 @@ exports.sourceNodes = async (
       apiURL,
       singleType,
       jwtToken,
+      queryLimit,
       reporter
     })
   )
