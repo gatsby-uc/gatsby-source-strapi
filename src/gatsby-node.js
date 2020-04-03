@@ -31,7 +31,7 @@ exports.sourceNodes = async (
       contentType,
       jwtToken,
       queryLimit,
-      reporter
+      reporter,
     })
   )
 
@@ -42,7 +42,7 @@ exports.sourceNodes = async (
       singleType,
       jwtToken,
       queryLimit,
-      reporter
+      reporter,
     })
   )
 
