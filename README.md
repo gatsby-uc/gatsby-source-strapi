@@ -16,14 +16,16 @@ plugins: [
     options: {
       apiURL: `http://localhost:1337`,
       queryLimit: 1000, // Default to 100
-      contentTypes: [`article`, `user`],
+      contentTypes: [`article`, `user`, `upload/file`],
       //If using single types place them in this array.
       singleTypes: [`home-page`, `contact`],
-      // Possibility to login with a strapi user, when content types are not publically available (optional).
+      // Possibility to login with a strapi user, when content types are not publicly available (optional).
       loginData: {
         identifier: "",
         password: "",
       },
+      useNamedImages: false,
+      // used file names in images, instead of hashes
     },
   },
 ]

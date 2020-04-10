@@ -1,3 +1,4 @@
+const path = require(`path`)
 const { createRemoteFileNode } = require(`gatsby-source-filesystem`)
 
 const extractFields = async (
@@ -5,9 +6,11 @@ const extractFields = async (
   store,
   cache,
   createNode,
+  createNodeId,
   touchNode,
   auth,
-  item
+  item,
+  useNamedImages
 ) => {
   for (const key of Object.keys(item)) {
     const field = item[key]
@@ -15,7 +18,17 @@ const extractFields = async (
       // add recursion to fetch nested strapi references
       await Promise.all(
         field.map(async f =>
-          extractFields(apiURL, store, cache, createNode, touchNode, auth, f)
+          extractFields(
+            apiURL,
+            store,
+            cache,
+            createNode,
+            createNodeId,
+            touchNode,
+            auth,
+            f,
+            useNamedImages
+          )
         )
       )
     } else {
@@ -41,13 +54,18 @@ const extractFields = async (
             const source_url = `${field.url.startsWith('http') ? '' : apiURL}${
               field.url
             }`
-            const fileNode = await createRemoteFileNode({
+            let remoteFileParams = {
               url: source_url,
               store,
               cache,
               createNode,
+              createNodeId,
               auth,
-            })
+            }
+            if (useNamedImages) {
+              remoteFileParams.name = path.parse(field.name).name
+            }
+            const fileNode = await createRemoteFileNode(remoteFileParams)
 
             // If we don't have cached data, download the file
             if (fileNode) {
@@ -66,7 +84,17 @@ const extractFields = async (
           item[`${key}___NODE`] = fileNodeID
         }
       } else if (field !== null && typeof field === 'object') {
-        extractFields(apiURL, store, cache, createNode, touchNode, auth, field)
+        extractFields(
+          apiURL,
+          store,
+          cache,
+          createNode,
+          createNodeId,
+          touchNode,
+          auth,
+          field,
+          useNamedImages
+        )
       }
     }
   }
@@ -79,8 +107,10 @@ exports.downloadMediaFiles = async ({
   store,
   cache,
   createNode,
+  createNodeId,
   touchNode,
   jwtToken: auth,
+  useNamedImages,
 }) =>
   Promise.all(
     entities.map(async entity => {
@@ -91,9 +121,11 @@ exports.downloadMediaFiles = async ({
           store,
           cache,
           createNode,
+          createNodeId,
           touchNode,
           auth,
-          item
+          item,
+          useNamedImages
         )
       }
       return entity

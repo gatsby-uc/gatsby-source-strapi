@@ -6,13 +6,14 @@ import normalize from './normalize'
 import authentication from './authentication'
 
 exports.sourceNodes = async (
-  { store, actions, cache, reporter, getNode, getNodes },
+  { store, actions, cache, reporter, getNode, getNodes, createNodeId },
   {
     apiURL = 'http://localhost:1337',
     contentTypes = [],
     singleTypes = [],
     loginData = {},
     queryLimit = 100,
+    useNamedImages = false,
   }
 ) => {
   const { createNode, deleteNode, touchNode } = actions
@@ -59,8 +60,10 @@ exports.sourceNodes = async (
     store,
     cache,
     createNode,
+    createNodeId,
     touchNode,
     jwtToken,
+    useNamedImages,
   })
 
   // new created nodes
