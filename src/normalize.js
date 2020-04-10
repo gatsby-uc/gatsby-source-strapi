@@ -63,7 +63,7 @@ const extractFields = async (
               auth,
             }
             if (useNamedImages) {
-              remoteFileParams.name = path.parse(field.name).name;
+              remoteFileParams.name = path.parse(field.name).name
             }
             const fileNode = await createRemoteFileNode(remoteFileParams)
 
@@ -84,7 +84,16 @@ const extractFields = async (
           item[`${key}___NODE`] = fileNodeID
         }
       } else if (field !== null && typeof field === 'object') {
-        extractFields(apiURL, store, cache, createNode, touchNode, auth, field, useNamedImages)
+        extractFields(
+          apiURL,
+          store,
+          cache,
+          createNode,
+          touchNode,
+          auth,
+          field,
+          useNamedImages
+        )
       }
     }
   }
@@ -100,7 +109,7 @@ exports.downloadMediaFiles = async ({
   createNodeId,
   touchNode,
   jwtToken: auth,
-  useNamedImages
+  useNamedImages,
 }) =>
   Promise.all(
     entities.map(async entity => {
