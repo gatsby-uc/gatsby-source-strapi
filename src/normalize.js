@@ -1,4 +1,18 @@
 const { createRemoteFileNode } = require(`gatsby-source-filesystem`)
+const commonmark = require('commonmark')
+
+const reader = new commonmark.Parser()
+
+function markdownImages(options, type) {
+  const typesToParse = options.typesToParse || {}
+  const fieldsToParse = typesToParse[type] || []
+
+  const shouldParseForImages = key => fieldsToParse.indexOf(key) > -1
+
+  return {
+    shouldParseForImages,
+  }
+}
 
 const extractFields = async (
   apiURL,
@@ -7,15 +21,30 @@ const extractFields = async (
   createNode,
   touchNode,
   auth,
-  item
+  item,
+  options
 ) => {
+  const { shouldParseForImages } = markdownImages(
+    options.markdownImages,
+    options.itemType
+  )
+
   for (const key of Object.keys(item)) {
     const field = item[key]
     if (Array.isArray(field)) {
       // add recursion to fetch nested strapi references
       await Promise.all(
         field.map(async f =>
-          extractFields(apiURL, store, cache, createNode, touchNode, auth, f)
+          extractFields(
+            apiURL,
+            store,
+            cache,
+            createNode,
+            touchNode,
+            auth,
+            f,
+            options
+          )
         )
       )
     } else {
@@ -66,7 +95,83 @@ const extractFields = async (
           item[`${key}___NODE`] = fileNodeID
         }
       } else if (field !== null && typeof field === 'object') {
-        extractFields(apiURL, store, cache, createNode, touchNode, auth, field)
+        extractFields(
+          apiURL,
+          store,
+          cache,
+          createNode,
+          touchNode,
+          auth,
+          field,
+          options
+        )
+      } else if (field !== null && shouldParseForImages(key)) {
+        // parse the markdown content
+        const parsed = reader.parse(field)
+        const walker = parsed.walker()
+        let event, node
+
+        while ((event = walker.next())) {
+          node = event.node
+          // process image nodes
+          if (event.entering && node.type === 'image') {
+            let fileNodeID, fileNodeBase
+            const filePathname = node.destination
+
+            // using filePathname on the cache key for multiple image field
+            const mediaDataCacheKey = `strapi-media-${item.id}-${filePathname}`
+            const cacheMediaData = await cache.get(mediaDataCacheKey)
+
+            // If we have cached media data and it wasn't modified, reuse
+            // previously created file node to not try to redownload
+            if (cacheMediaData) {
+              fileNodeID = cacheMediaData.fileNodeID
+              fileNodeBase = cacheMediaData.fileNodeBase
+              touchNode({ nodeId: cacheMediaData.fileNodeID })
+            }
+
+            if (!fileNodeID) {
+              try {
+                // full media url
+                const source_url = `${
+                  filePathname.startsWith('http') ? '' : apiURL
+                }${filePathname}`
+
+                const fileNode = await createRemoteFileNode({
+                  url: source_url,
+                  store,
+                  cache,
+                  createNode,
+                  auth,
+                })
+
+                // If we don't have cached data, download the file
+                if (fileNode) {
+                  fileNodeID = fileNode.id
+                  fileNodeBase = fileNode.base
+
+                  await cache.set(mediaDataCacheKey, {
+                    fileNodeID,
+                    fileNodeBase,
+                  })
+                }
+              } catch (e) {
+                // Ignore
+              }
+            }
+            if (fileNodeID) {
+              // create an array of parsed and downloaded images as a new field
+              if (!item[`${key}_images___NODE`]) {
+                item[`${key}_images___NODE`] = []
+              }
+              item[`${key}_images___NODE`].push(fileNodeID)
+
+              // replace filePathname with the newly created base
+              // useful for future operations in Gatsby
+              item[key] = item[key].replace(filePathname, fileNodeBase)
+            }
+          }
+        }
       }
     }
   }
@@ -81,9 +186,12 @@ exports.downloadMediaFiles = async ({
   createNode,
   touchNode,
   jwtToken: auth,
+  options,
 }) =>
   Promise.all(
-    entities.map(async entity => {
+    entities.map(async (entity, i) => {
+      const itemType = options.allTypes[i]
+
       for (let item of entity) {
         // loop item over fields
         await extractFields(
@@ -93,7 +201,11 @@ exports.downloadMediaFiles = async ({
           createNode,
           touchNode,
           auth,
-          item
+          item,
+          {
+            itemType,
+            markdownImages: options.markdownImages,
+          }
         )
       }
       return entity

@@ -38,6 +38,7 @@
   ],
   "dependencies": {
     "axios": "^0.18.0",
+    "commonmark": "^0.29.1",
     "gatsby-node-helpers": "^0.3.0",
     "gatsby-source-filesystem": "^1.5.39",
     "lodash": "^4.17.11",
