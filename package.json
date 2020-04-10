@@ -24,7 +24,7 @@
   "license": "MIT",
   "homepage": "http://strapi.io",
   "scripts": {
-    "prepare": "npm run build",
+    "prepublish": "npm run build",
     "build": "babel src --out-dir .",
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "prettier --write 'src/**/*.js'",
