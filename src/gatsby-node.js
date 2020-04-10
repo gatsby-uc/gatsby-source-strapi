@@ -13,6 +13,7 @@ exports.sourceNodes = async (
     singleTypes = [],
     loginData = {},
     queryLimit = 100,
+    useNamedImages = false
   }
 ) => {
   const { createNode, deleteNode, touchNode } = actions
@@ -62,6 +63,7 @@ exports.sourceNodes = async (
     createNodeId,
     touchNode,
     jwtToken,
+    useNamedImages
   })
 
   // new created nodes

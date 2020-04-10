@@ -9,7 +9,8 @@ const extractFields = async (
   createNodeId,
   touchNode,
   auth,
-  item
+  item,
+  useNamedImages
 ) => {
   for (const key of Object.keys(item)) {
     const field = item[key]
@@ -25,7 +26,8 @@ const extractFields = async (
             createNodeId,
             touchNode,
             auth,
-            f
+            f,
+            useNamedImages
           )
         )
       )
@@ -52,15 +54,18 @@ const extractFields = async (
             const source_url = `${field.url.startsWith('http') ? '' : apiURL}${
               field.url
             }`
-            const fileNode = await createRemoteFileNode({
+            let remoteFileParams = {
               url: source_url,
               store,
               cache,
               createNode,
               createNodeId,
               auth,
-              name: path.parse(field.name).name,
-            })
+            }
+            if (useNamedImages) {
+              remoteFileParams.name = path.parse(field.name).name;
+            }
+            const fileNode = await createRemoteFileNode(remoteFileParams)
 
             // If we don't have cached data, download the file
             if (fileNode) {
@@ -79,16 +84,7 @@ const extractFields = async (
           item[`${key}___NODE`] = fileNodeID
         }
       } else if (field !== null && typeof field === 'object') {
-        extractFields(
-          apiURL,
-          store,
-          cache,
-          createNode,
-          createNodeId,
-          touchNode,
-          auth,
-          field
-        )
+        extractFields(apiURL, store, cache, createNode, touchNode, auth, field, useNamedImages)
       }
     }
   }
@@ -104,6 +100,7 @@ exports.downloadMediaFiles = async ({
   createNodeId,
   touchNode,
   jwtToken: auth,
+  useNamedImages
 }) =>
   Promise.all(
     entities.map(async entity => {
@@ -117,7 +114,8 @@ exports.downloadMediaFiles = async ({
           createNodeId,
           touchNode,
           auth,
-          item
+          item,
+          useNamedImages
         )
       }
       return entity
