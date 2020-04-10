@@ -3,59 +3,56 @@ import fetchData from './fetch'
 import { Node } from './nodes'
 import { capitalize } from 'lodash'
 import normalize from './normalize'
+import authentication from './authentication'
 
 exports.sourceNodes = async (
-  { store, boundActionCreators, createNodeId, cache },
+  { store, actions, cache, reporter, getNode, getNodes, createNodeId },
   {
     apiURL = 'http://localhost:1337',
     contentTypes = [],
+    singleTypes = [],
     loginData = {},
     queryLimit = 100,
   }
 ) => {
-  const { createNode, touchNode } = boundActionCreators
-  let jwtToken = null
+  const { createNode, deleteNode, touchNode } = actions
 
-  // Check if loginData is set.
-  if (
-    loginData.hasOwnProperty('identifier') &&
-    loginData.identifier.length !== 0 &&
-    loginData.hasOwnProperty('password') &&
-    loginData.password.length !== 0
-  ) {
-    console.time('Authenticate Strapi user')
-    console.log('Authenticate Strapi user')
+  // Authentication function
+  let jwtToken = await authentication({ loginData, reporter, apiURL })
 
-    // Define API endpoint.
-    const loginEndpoint = `${apiURL}/auth/local`
-
-    // Make API request.
-    try {
-      const loginResponse = await axios.post(loginEndpoint, loginData)
-
-      if (loginResponse.hasOwnProperty('data')) {
-        jwtToken = loginResponse.data.jwt
-      }
-    } catch (e) {
-      console.error('Strapi authentication error: ' + e)
-    }
-
-    console.timeEnd('Authenticate Strapi user')
-  }
+  // Start activity, Strapi data fetching
+  const fetchActivity = reporter.activityTimer(`Fetched Strapi Data`)
+  fetchActivity.start()
 
   // Generate a list of promises based on the `contentTypes` option.
-  const promises = contentTypes.map(contentType =>
+  const contentTypePromises = contentTypes.map(contentType =>
     fetchData({
       apiURL,
       contentType,
       jwtToken,
       queryLimit,
+      reporter,
     })
   )
 
-  // Execute the promises.
-  let entities = await Promise.all(promises)
+  // Generate a list of promises based on the `singleTypes` option.
+  const singleTypePromises = singleTypes.map(singleType =>
+    fetchData({
+      apiURL,
+      singleType,
+      jwtToken,
+      queryLimit,
+      reporter,
+    })
+  )
 
+  // Execute the promises
+  let entities = await Promise.all([
+    ...contentTypePromises,
+    ...singleTypePromises,
+  ])
+
+  // Creating files
   entities = await normalize.downloadMediaFiles({
     entities,
     apiURL,
@@ -67,11 +64,41 @@ exports.sourceNodes = async (
     jwtToken,
   })
 
-  contentTypes.forEach((contentType, i) => {
+  // new created nodes
+  let newNodes = []
+
+  // Fetch existing strapi nodes
+  const existingNodes = getNodes().filter(
+    n => n.internal.owner === `gatsby-source-strapi`
+  )
+
+  // Touch each one of them
+  existingNodes.forEach(n => {
+    touchNode({ nodeId: n.id })
+  })
+
+  // Merge single and content types and retrieve create nodes
+  contentTypes.concat(singleTypes).forEach((contentType, i) => {
     const items = entities[i]
     items.forEach((item, i) => {
       const node = Node(capitalize(contentType), item)
+      // Adding new created nodes in an Array
+      newNodes.push(node)
+
+      // Create nodes
       createNode(node)
     })
   })
+
+  // Make a diff array between existing nodes and new ones
+  const diff = existingNodes.filter(
+    ({ id: id1 }) => !newNodes.some(({ id: id2 }) => id2 === id1)
+  )
+
+  // Delete diff nodes
+  diff.forEach(data => {
+    deleteNode({ node: getNode(data.id) })
+  })
+
+  fetchActivity.end()
 }
