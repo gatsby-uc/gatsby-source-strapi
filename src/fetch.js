@@ -11,9 +11,14 @@ module.exports = async ({
   reporter,
 }) => {
   // Define API endpoint.
+  let pluralizedContentType = contentType && contentType.plural
+    ? contentType.plural
+    : contentType
+      ? pluralize(contentType)
+      : undefined;
   let apiBase = singleType
     ? `${apiURL}/${singleType}`
-    : `${apiURL}/${pluralize(contentType)}`
+    : `${apiURL}/${pluralizedContentType}`
 
   const apiEndpoint = `${apiBase}?_limit=${queryLimit}`
 
