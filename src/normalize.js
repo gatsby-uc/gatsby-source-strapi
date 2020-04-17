@@ -18,10 +18,11 @@ const extractFields = async (
     // using field on the cache key for multiple image field
     const mediaDataCacheKey = `strapi-media-${item.id}-${key}`
     const cacheMediaData = await cache.get(mediaDataCacheKey)
+    const itemUpdatedAt = item.updatedAt || item.updated_at
 
     // If we have cached media data and it wasn't modified, reuse
     // previously created file node to not try to redownload
-    if (cacheMediaData && item.updatedAt === cacheMediaData.updatedAt) {
+    if (cacheMediaData && itemUpdatedAt === cacheMediaData.updatedAt) {
       fileNodeID = cacheMediaData.fileNodeID
       touchNode({ nodeId: cacheMediaData.fileNodeID })
     }
@@ -48,7 +49,7 @@ const extractFields = async (
 
           await cache.set(mediaDataCacheKey, {
             fileNodeID,
-            updatedAt: item.updatedAt,
+            updatedAt: itemUpdatedAt,
           })
         }
       } catch (e) {
