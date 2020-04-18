@@ -2,18 +2,18 @@
   "sourceMaps": true,
   "presets": [
     [
-      "env",
+      "@babel/env",
       {
         "targets": {
-          "node": 4.0,
-          "uglify": true
-        }
+          "node": "current",
+        },
+        "forceAllTransforms": true
       }
     ]
   ],
   "plugins": [
-    "transform-runtime",
-    "transform-object-rest-spread",
-    "transform-async-to-generator"
+    "@babel/plugin-transform-runtime",
+    "@babel/plugin-proposal-object-rest-spread",
+    "@babel/plugin-transform-async-to-generator"
   ]
 }
