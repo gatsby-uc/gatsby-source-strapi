@@ -12,6 +12,19 @@ const extractFields = async (
   item,
   useNamedImages
 ) => {
+  if (item.hasOwnProperty('mime')) {
+    // This allows us to run qraphql like:
+    // ```strapiUploadFile {
+    //   self {
+    //     childImageSharp {
+    // 			fluid(maxWidth: 300) {
+    //       	src
+    //       }
+    //     }
+    //   }
+    // }```
+    item[`self`] = item;
+  }
   for (const key of Object.keys(item)) {
     const field = item[key]
     if (Array.isArray(field)) {
