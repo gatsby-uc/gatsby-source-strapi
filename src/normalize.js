@@ -23,7 +23,7 @@ const extractFields = async (
     //     }
     //   }
     // }```
-    item[`self`] = item;
+    item[`self`] = item
   }
   for (const key of Object.keys(item)) {
     const field = item[key]
