@@ -39,7 +39,6 @@
   "dependencies": {
     "axios": "^0.18.0",
     "gatsby-node-helpers": "^0.3.0",
-    "gatsby-source-filesystem": "^1.5.39",
     "lodash": "^4.17.11",
     "pluralize": "^7.0.0"
   },
@@ -51,6 +50,9 @@
     "babel-preset-env": "^1.6.0",
     "pre-commit": "^1.2.2",
     "prettier": "^1.5.3"
+  },
+  "peerDependencies": {
+    "gatsby-source-filesystem": "^2.x"
   },
   "pre-commit": [
     "format"

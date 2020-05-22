@@ -6,7 +6,7 @@ import normalize from './normalize'
 import authentication from './authentication'
 
 exports.sourceNodes = async (
-  { store, actions, cache, reporter, getNode, getNodes },
+  { actions, cache, createNodeId, getNode, getNodes, reporter, store },
   {
     apiURL = 'http://localhost:1337',
     contentTypes = [],
@@ -59,6 +59,7 @@ exports.sourceNodes = async (
     store,
     cache,
     createNode,
+    createNodeId,
     touchNode,
     jwtToken,
   })
