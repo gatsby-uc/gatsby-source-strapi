@@ -49,6 +49,7 @@ const clean = item => {
   forEach(item, (value, key) => {
     if (startsWith(key, `__`)) {
       delete item[key]
+      item['strapi' + key] = value;
     } else if (startsWith(key, `_`)) {
       delete item[key]
       item[key.slice(1)] = value

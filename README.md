@@ -41,24 +41,8 @@ You can query Document nodes created from your Strapi API like the following:
         id
         title
         content
-      }
-    }
-  }
-}
-```
-
-To query images you can do the following:
-
-```graphql
-{
-  allStrapiArticle {
-    edges {
-      node {
-        id
-        singleImage {
-         publicURL
-        }
-        multipleImages {
+        imageOrImages {
+          alternativeText
           localFile {
             publicURL
           }
