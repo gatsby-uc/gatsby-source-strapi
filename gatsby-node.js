@@ -138,10 +138,12 @@ exports.sourceNodes = function () {
             });
 
             // Merge single and content types and retrieve create nodes
-            contentTypes.concat(singleTypes).forEach(function (contentType, i) {
+            contentTypes.concat(singleTypes).forEach(function (type, i) {
               var items = entities[i];
+              var name = (0, _lodash.isObject)(type) ? type.name : type;
+
               items.forEach(function (item, i) {
-                var node = (0, _nodes.Node)((0, _lodash.capitalize)(contentType), item);
+                var node = (0, _nodes.Node)((0, _lodash.capitalize)(name), item);
                 // Adding new created nodes in an Array
                 newNodes.push(node);
 
