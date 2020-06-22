@@ -10,12 +10,25 @@ module.exports = async ({
   queryLimit,
   reporter,
 }) => {
-  // Define API endpoint.
-  let apiBase = singleType
-    ? `${apiURL}/${singleType}`
-    : `${apiURL}/${pluralize(contentType)}`
+  const _singleType = isObject(singleType) ? singleType.name : singleType
+  const _contentType = pluralize(
+    isObject(contentType) ? contentType.name : contentType
+  )
 
-  const apiEndpoint = `${apiBase}?_limit=${queryLimit}`
+  const queryParams = singleType
+    ? isObject(singleType)
+      ? `&${singleType.params}`
+      : ''
+    : isObject(contentType)
+      ? `&${contentType.params}`
+      : ''
+
+  // Define API endpoint.
+  const apiBase = singleType
+    ? `${apiURL}/${_singleType}`
+    : `${apiURL}/${_contentType}`
+
+  const apiEndpoint = `${apiBase}?_limit=${queryLimit}${queryParams}`
 
   reporter.info(`Starting to fetch data from Strapi - ${apiEndpoint}`)
 
