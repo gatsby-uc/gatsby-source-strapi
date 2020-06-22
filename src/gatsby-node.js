@@ -1,7 +1,7 @@
 import axios from 'axios'
 import fetchData from './fetch'
 import { Node } from './nodes'
-import { capitalize } from 'lodash'
+import { capitalize, isObject } from 'lodash'
 import normalize from './normalize'
 import authentication from './authentication'
 
@@ -77,10 +77,12 @@ exports.sourceNodes = async (
   })
 
   // Merge single and content types and retrieve create nodes
-  contentTypes.concat(singleTypes).forEach((contentType, i) => {
+  contentTypes.concat(singleTypes).forEach((type, i) => {
     const items = entities[i]
+    const name = isObject(type) ? type.name : type
+
     items.forEach((item, i) => {
-      const node = Node(capitalize(contentType), item)
+      const node = Node(capitalize(name), item)
       // Adding new created nodes in an Array
       newNodes.push(node)
 
