@@ -15,7 +15,7 @@ const extractFields = async (
       // add recursion to fetch nested strapi references
       await Promise.all(
         field.map(async f =>
-          await extractFields(apiURL, store, cache, createNode, touchNode, auth, f)
+          extractFields(apiURL, store, cache, createNode, touchNode, auth, f)
         )
       )
     } else {
