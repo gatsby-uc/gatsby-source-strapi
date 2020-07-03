@@ -4,8 +4,8 @@ import pluralize from 'pluralize'
 
 module.exports = async ({
   apiURL,
-  contentType,
-  singleType,
+  contentType = '',
+  singleType = '',
   jwtToken,
   queryLimit,
   reporter,
