@@ -23,8 +23,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 module.exports = function () {
   var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(_ref2) {
     var apiURL = _ref2.apiURL,
-        contentType = _ref2.contentType,
-        singleType = _ref2.singleType,
+        _ref2$contentType = _ref2.contentType,
+        contentType = _ref2$contentType === undefined ? '' : _ref2$contentType,
+        _ref2$singleType = _ref2.singleType,
+        singleType = _ref2$singleType === undefined ? '' : _ref2$singleType,
         jwtToken = _ref2.jwtToken,
         queryLimit = _ref2.queryLimit,
         reporter = _ref2.reporter;
