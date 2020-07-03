@@ -66,7 +66,7 @@ const extractFields = async (
           item[`${key}___NODE`] = fileNodeID
         }
       } else if (field !== null && typeof field === 'object') {
-        extractFields(apiURL, store, cache, createNode, touchNode, auth, field)
+        await extractFields(apiURL, store, cache, createNode, touchNode, auth, field)
       }
     }
   }
