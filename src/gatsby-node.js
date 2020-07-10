@@ -6,13 +6,7 @@ import authentication from './authentication'
 
 exports.sourceNodes = async (
   { store, actions, cache, reporter, getNode, getNodes },
-  {
-    apiURL = 'http://localhost:1337',
-    contentTypes = [],
-    singleTypes = [],
-    loginData = {},
-    queryLimit = 100,
-  }
+  { apiURL = 'http://localhost:1337', contentTypes = [], singleTypes = [], loginData = {}, queryLimit = 100 }
 ) => {
   const { createNode, deleteNode, touchNode } = actions
 
@@ -46,10 +40,7 @@ exports.sourceNodes = async (
   )
 
   // Execute the promises
-  let entities = await Promise.all([
-    ...contentTypePromises,
-    ...singleTypePromises,
-  ])
+  let entities = await Promise.all([...contentTypePromises, ...singleTypePromises])
 
   // Creating files
   entities = await normalize.downloadMediaFiles({
@@ -66,9 +57,7 @@ exports.sourceNodes = async (
   let newNodes = []
 
   // Fetch existing strapi nodes
-  const existingNodes = getNodes().filter(
-    n => n.internal.owner === `gatsby-source-strapi`
-  )
+  const existingNodes = getNodes().filter(n => n.internal.owner === `gatsby-source-strapi`)
 
   // Touch each one of them
   existingNodes.forEach(n => {
@@ -89,9 +78,7 @@ exports.sourceNodes = async (
   })
 
   // Make a diff array between existing nodes and new ones
-  const diff = existingNodes.filter(
-    ({ id: id1 }) => !newNodes.some(({ id: id2 }) => id2 === id1)
-  )
+  const diff = existingNodes.filter(({ id: id1 }) => !newNodes.some(({ id: id2 }) => id2 === id1))
 
   // Delete diff nodes
   diff.forEach(data => {
