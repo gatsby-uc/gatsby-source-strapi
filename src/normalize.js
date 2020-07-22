@@ -10,16 +10,7 @@ const isObject = obj => {
   return obj && Object.prototype.toString.apply(obj) === '[object Object]'
 }
 
-const extractFields = async (
-  apiURL,
-  store,
-  cache,
-  createNode,
-  createNodeId,
-  touchNode,
-  auth,
-  item
-) => {
+const extractFields = async (apiURL, store, cache, createNode, createNodeId, touchNode, auth, item) => {
   if (isImage(item)) {
     let fileNodeID
     // using field on the cache key for multiple image field
@@ -38,9 +29,7 @@ const extractFields = async (
     if (!fileNodeID) {
       try {
         // full media url
-        const source_url = `${item.url.startsWith('http') ? '' : apiURL}${
-          item.url
-        }`
+        const source_url = `${item.url.startsWith('http') ? '' : apiURL}${item.url}`
         const fileNode = await createRemoteFileNode({
           url: source_url,
           store,
@@ -74,31 +63,13 @@ const extractFields = async (
   // keep looping for extra fields such as formats
   if (Array.isArray(item)) {
     for (const key of item) {
-      await extractFields(
-        apiURL,
-        store,
-        cache,
-        createNode,
-        createNodeId,
-        touchNode,
-        auth,
-        key
-      )
+      await extractFields(apiURL, store, cache, createNode, createNodeId, touchNode, auth, key)
     }
   } else if (isObject(item)) {
     for (const key of Object.keys(item)) {
       const field = item[key]
 
-      await extractFields(
-        apiURL,
-        store,
-        cache,
-        createNode,
-        createNodeId,
-        touchNode,
-        auth,
-        field
-      )
+      await extractFields(apiURL, store, cache, createNode, createNodeId, touchNode, auth, field)
     }
   }
 }
@@ -118,16 +89,7 @@ exports.downloadMediaFiles = async ({
     entities.map(async entity => {
       for (let item of entity) {
         // loop item over fields
-        await extractFields(
-          apiURL,
-          store,
-          cache,
-          createNode,
-          createNodeId,
-          touchNode,
-          auth,
-          item
-        )
+        await extractFields(apiURL, store, cache, createNode, createNodeId, touchNode, auth, item)
       }
       return entity
     })
