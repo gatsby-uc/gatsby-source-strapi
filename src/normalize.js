@@ -13,7 +13,7 @@ const extractFields = async (apiURL, store, cache, createNode, touchNode, auth, 
       if (field !== null && has('mime', field)) {
         let fileNodeID
         // using field on the cache key for multiple image field
-        const mediaDataCacheKey = `strapi-media-${item.id}-${key}`
+        const mediaDataCacheKey = `strapi-media-${item.id}-${field.id}-${key}`
         const cacheMediaData = await cache.get(mediaDataCacheKey)
 
         // If we have cached media data and it wasn't modified, reuse
