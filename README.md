@@ -18,10 +18,10 @@ plugins: [
       queryLimit: 1000, // Default to 100
       contentTypes: [
         `article`, `user`,
-        //for irregular collection names
+        // if you don't want to leave the definition of an api endpoint to the pluralize module
         {
-          name: `person`,
-          plural: `people`
+          name: `collection-name`,
+          endpoint: `custom-endpoint`
         },
       ],
       //If using single types place them in this array.

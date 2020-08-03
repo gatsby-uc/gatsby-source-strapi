@@ -4,8 +4,8 @@ import pluralize from 'pluralize'
 
 module.exports = async ({ apiURL, contentType, singleType, jwtToken, queryLimit, reporter }) => {
   // Define API endpoint.
-  let pluralizedContentType = contentType && contentType.plural
-    ? contentType.plural
+  let pluralizedContentType = contentType && contentType.endpoint
+    ? contentType.endpoint
     : contentType
       ? pluralize(contentType)
       : undefined;
