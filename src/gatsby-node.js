@@ -1,4 +1,3 @@
-import axios from 'axios'
 import fetchData from './fetch'
 import { Node } from './nodes'
 import { capitalize } from 'lodash'
@@ -19,7 +18,7 @@ exports.sourceNodes = async (
   const { createNode, deleteNode, touchNode } = actions
 
   // Authentication function
-  let jwtToken = await authentication({ loginData, reporter, apiURL })
+  const jwtToken = await authentication({ loginData, reporter, apiURL })
 
   // Start activity, Strapi data fetching
   const fetchActivity = reporter.activityTimer(`Fetched Strapi Data`)
@@ -48,10 +47,7 @@ exports.sourceNodes = async (
   )
 
   // Execute the promises
-  let entities = await Promise.all([
-    ...contentTypePromises,
-    ...singleTypePromises,
-  ])
+  let entities = await Promise.all([...contentTypePromises, ...singleTypePromises])
 
   // Creating files
   entities = await normalize.downloadMediaFiles({
@@ -72,9 +68,7 @@ exports.sourceNodes = async (
   let newNodes = []
 
   // Fetch existing strapi nodes
-  const existingNodes = getNodes().filter(
-    n => n.internal.owner === `gatsby-source-strapi`
-  )
+  const existingNodes = getNodes().filter(n => n.internal.owner === `gatsby-source-strapi`)
 
   // Touch each one of them
   existingNodes.forEach(n => {
@@ -84,7 +78,7 @@ exports.sourceNodes = async (
   // Merge single and content types and retrieve create nodes
   contentTypes.concat(singleTypes).forEach((contentType, i) => {
     const items = entities[i]
-    items.forEach((item, i) => {
+    items.forEach(item => {
       const node = Node(capitalize(contentType), item)
       // Adding new created nodes in an Array
       newNodes.push(node)
@@ -95,9 +89,7 @@ exports.sourceNodes = async (
   })
 
   // Make a diff array between existing nodes and new ones
-  const diff = existingNodes.filter(
-    ({ id: id1 }) => !newNodes.some(({ id: id2 }) => id2 === id1)
-  )
+  const diff = existingNodes.filter(({ id: id1 }) => !newNodes.some(({ id: id2 }) => id2 === id1))
 
   // Delete diff nodes
   diff.forEach(data => {

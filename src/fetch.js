@@ -1,42 +1,21 @@
 import axios from 'axios'
-import { isObject, startsWith, forEach } from 'lodash'
+import { isObject, startsWith, forEach, set, castArray } from 'lodash'
 import pluralize from 'pluralize'
 
-module.exports = async ({
-  apiURL,
-  contentType,
-  singleType,
-  jwtToken,
-  queryLimit,
-  reporter,
-}) => {
+module.exports = async ({ apiURL, contentType, singleType, jwtToken, queryLimit, reporter }) => {
   // Define API endpoint.
-  let apiBase = singleType
-    ? `${apiURL}/${singleType}`
-    : `${apiURL}/${pluralize(contentType)}`
+  let apiBase = singleType ? `${apiURL}/${singleType}` : `${apiURL}/${pluralize(contentType)}`
 
   const apiEndpoint = `${apiBase}?_limit=${queryLimit}`
 
   reporter.info(`Starting to fetch data from Strapi - ${apiEndpoint}`)
 
-  // Set authorization token
-  let fetchRequestConfig = {}
-  if (jwtToken !== null) {
-    fetchRequestConfig.headers = {
-      Authorization: `Bearer ${jwtToken}`,
-    }
+  try {
+    const { data } = await axios(apiEndpoint, addAuthorizationHeader({}, jwtToken))
+    return castArray(data).map(clean)
+  } catch (error) {
+    reporter.panic(`Failed to fetch data from Strapi`, error)
   }
-
-  // Make API request.
-  const documents = await axios(apiEndpoint, fetchRequestConfig)
-
-  // Make sure response is an array for single type instances
-  const response = Array.isArray(documents.data)
-    ? documents.data
-    : [documents.data]
-
-  // Map and clean data.
-  return response.map(item => clean(item))
 }
 
 /**
@@ -58,4 +37,12 @@ const clean = item => {
   })
 
   return item
+}
+
+const addAuthorizationHeader = (options, token) => {
+  if (token) {
+    set(options, 'headers.Authorization', `Bearer ${token}`)
+  }
+
+  return options
 }

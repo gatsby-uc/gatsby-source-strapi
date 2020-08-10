@@ -1,3 +1,4 @@
+import { has } from 'lodash/fp'
 const { createRemoteFileNode } = require(`gatsby-source-filesystem`)
 const commonmark = require('commonmark')
 
@@ -14,43 +15,20 @@ function markdownImages(options, type) {
   }
 }
 
-const extractFields = async (
-  apiURL,
-  store,
-  cache,
-  createNode,
-  touchNode,
-  auth,
-  item,
-  options
-) => {
-  const { shouldParseForImages } = markdownImages(
-    options.markdownImages,
-    options.itemType
-  )
+const extractFields = async (apiURL, store, cache, createNode, touchNode, auth, item, options) => {
+  const { shouldParseForImages } = markdownImages(options.markdownImages, options.itemType)
 
   for (const key of Object.keys(item)) {
     const field = item[key]
     if (Array.isArray(field)) {
       // add recursion to fetch nested strapi references
       await Promise.all(
-        field.map(async f =>
-          extractFields(
-            apiURL,
-            store,
-            cache,
-            createNode,
-            touchNode,
-            auth,
-            f,
-            options
-          )
-        )
+        field.map(async f => extractFields(apiURL, store, cache, createNode, touchNode, auth, f, options))
       )
     } else {
       // image fields have a mime property among other
       // maybe should find a better test
-      if (field !== null && field.hasOwnProperty('mime')) {
+      if (field !== null && has('mime', field)) {
         let fileNodeID
         // using field on the cache key for multiple image field
         const mediaDataCacheKey = `strapi-media-${item.id}-${key}`
@@ -67,9 +45,7 @@ const extractFields = async (
         if (!fileNodeID) {
           try {
             // full media url
-            const source_url = `${field.url.startsWith('http') ? '' : apiURL}${
-              field.url
-            }`
+            const source_url = `${field.url.startsWith('http') ? '' : apiURL}${field.url}`
             const fileNode = await createRemoteFileNode({
               url: source_url,
               store,
@@ -95,16 +71,7 @@ const extractFields = async (
           item[`${key}___NODE`] = fileNodeID
         }
       } else if (field !== null && typeof field === 'object') {
-        extractFields(
-          apiURL,
-          store,
-          cache,
-          createNode,
-          touchNode,
-          auth,
-          field,
-          options
-        )
+        extractFields(apiURL, store, cache, createNode, touchNode, auth, field, options)
       } else if (field !== null && shouldParseForImages(key)) {
         // parse the markdown content
         const parsed = reader.parse(field)
@@ -133,9 +100,7 @@ const extractFields = async (
             if (!fileNodeID) {
               try {
                 // full media url
-                const source_url = `${
-                  filePathname.startsWith('http') ? '' : apiURL
-                }${filePathname}`
+                const source_url = `${filePathname.startsWith('http') ? '' : apiURL}${filePathname}`
 
                 const fileNode = await createRemoteFileNode({
                   url: source_url,
@@ -194,19 +159,10 @@ exports.downloadMediaFiles = async ({
 
       for (let item of entity) {
         // loop item over fields
-        await extractFields(
-          apiURL,
-          store,
-          cache,
-          createNode,
-          touchNode,
-          auth,
-          item,
-          {
-            itemType,
-            markdownImages: options.markdownImages,
-          }
-        )
+        await extractFields(apiURL, store, cache, createNode, touchNode, auth, item, {
+          itemType,
+          markdownImages: options.markdownImages,
+        })
       }
       return entity
     })
