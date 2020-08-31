@@ -26,7 +26,12 @@ module.exports = async ({ apiURL, contentType, singleType, jwtToken, queryLimit,
  */
 const clean = item => {
   forEach(item, (value, key) => {
-    if (startsWith(key, `__`)) {
+    // Remove mongo's __v
+    if (key === `__v`) {
+      delete item[key]
+    // Output type for strapi's dynamic components
+    } else if (key === `__component`) {
+      item.dynamicComponentType = item[key]
       delete item[key]
     } else if (startsWith(key, `_`)) {
       delete item[key]
