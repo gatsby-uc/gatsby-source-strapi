@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { isObject, startsWith, forEach, set, castArray } from 'lodash'
+import { isObject, forEach, set, castArray } from 'lodash'
 import pluralize from 'pluralize'
 
 module.exports = async ({ apiURL, contentType, singleType, jwtToken, queryLimit, reporter }) => {
@@ -29,13 +29,10 @@ const clean = item => {
     // Remove mongo's __v
     if (key === `__v`) {
       delete item[key]
-    // Output type for strapi's dynamic components
-    } else if (key === `__component`) {
-      item.dynamicComponentType = item[key]
+      // Rename mongo's "_id" key to "id".
+    } else if (key === `_id`) {
       delete item[key]
-    } else if (startsWith(key, `_`)) {
-      delete item[key]
-      item[key.slice(1)] = value
+      item.id = value
     } else if (isObject(value)) {
       item[key] = clean(value)
     }
