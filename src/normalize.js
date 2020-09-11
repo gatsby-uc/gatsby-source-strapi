@@ -14,7 +14,7 @@ const extractFields = async (apiURL, store, cache, createNode, createNodeId, tou
   if (isImage(item)) {
     let fileNodeID
     // using field on the cache key for multiple image field
-    const mediaDataCacheKey = `strapi-media-${item.id}`
+    const mediaDataCacheKey = `strapi-media-${item.hash}`
     const cacheMediaData = await cache.get(mediaDataCacheKey)
     const itemUpdatedAt = item.updatedAt || item.updated_at
 
