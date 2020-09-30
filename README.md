@@ -3,7 +3,6 @@
 Source plugin for pulling documents into Gatsby from a Strapi API.
 
 ## Install
-gatsby Website project was bootstrapped with Create React App.
 
 Getting Started
 Goto the gatsby repository
