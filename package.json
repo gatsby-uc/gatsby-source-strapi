@@ -24,12 +24,12 @@
   "license": "MIT",
   "homepage": "http://strapi.io",
   "scripts": {
-    "prepublish": "npm run build",
-    "build": "babel src --out-dir .",
+    "prepublishOnly": "npm run build",
+    "build": "babel src --out-dir lib",
+    "watch": "babel -w src --out-dir lib",
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "prettier --write 'src/**/*.js'",
-    "lint": "eslint src",
-    "watch": "babel -w src --out-dir ."
+    "lint": "eslint src"
   },
   "keywords": [
     "gatsby",
@@ -38,22 +38,20 @@
     "strapi"
   ],
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "0.21.0",
     "gatsby-node-helpers": "^0.3.0",
-    "gatsby-source-filesystem": "^1.5.39",
-    "lodash": "^4.17.11",
-    "pluralize": "^7.0.0"
+    "gatsby-source-filesystem": "2.5.0",
+    "lodash": "4.17.20",
+    "pluralize": "8.0.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.24.1",
-    "babel-plugin-transform-async-to-generator": "^6.24.1",
-    "babel-plugin-transform-object-rest-spread": "^6.23.0",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-preset-env": "^1.6.0",
-    "eslint": "7.4.0",
-    "husky": "4.2.5",
-    "lint-staged": "10.2.11",
-    "prettier": "^1.5.3"
+    "@babel/cli": "7.12.1",
+    "@babel/core": "7.12.3",
+    "@babel/preset-env": "7.12.1",
+    "eslint": "7.13.0",
+    "husky": "4.3.0",
+    "lint-staged": "10.5.1",
+    "prettier": "2.1.2"
   },
   "husky": {
     "hooks": {
