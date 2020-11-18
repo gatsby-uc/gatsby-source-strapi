@@ -1,10 +1,11 @@
 import axios from 'axios';
 import { isObject, forEach, set, castArray, startsWith } from 'lodash';
-import pluralize from 'pluralize';
 
-module.exports = async ({ apiURL, contentType, singleType, jwtToken, queryLimit, reporter }) => {
+module.exports = async (endpoint, ctx) => {
+  const { apiURL, queryLimit, jwtToken, reporter } = ctx;
+
   // Define API endpoint.
-  let apiBase = singleType ? `${apiURL}/${singleType}` : `${apiURL}/${pluralize(contentType)}`;
+  let apiBase = `${apiURL}/${endpoint}`;
 
   const apiEndpoint = `${apiBase}?_limit=${queryLimit}`;
 

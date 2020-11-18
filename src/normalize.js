@@ -4,8 +4,8 @@ import { createRemoteFileNode } from 'gatsby-source-filesystem';
 const isImage = has('mime');
 const getUpdatedAt = (image) => image.updatedAt || image.updated_at;
 
-const extractImage = async (image, context) => {
-  const { apiURL, store, cache, createNode, createNodeId, touchNode, auth } = context;
+const extractImage = async (image, ctx) => {
+  const { apiURL, store, cache, createNode, createNodeId, touchNode, auth } = ctx;
 
   let fileNodeID;
 
@@ -50,14 +50,14 @@ const extractImage = async (image, context) => {
   }
 };
 
-const extractFields = async (item, context) => {
+const extractFields = async (item, ctx) => {
   if (isImage(item)) {
-    return extractImage(item, context);
+    return extractImage(item, ctx);
   }
 
   if (Array.isArray(item)) {
     for (const element of item) {
-      await extractFields(element, context);
+      await extractFields(element, ctx);
     }
 
     return;
@@ -65,7 +65,7 @@ const extractFields = async (item, context) => {
 
   if (isObject(item)) {
     for (const key in item) {
-      await extractFields(item[key], context);
+      await extractFields(item[key], ctx);
     }
 
     return;
@@ -73,25 +73,6 @@ const extractFields = async (item, context) => {
 };
 
 // Downloads media from image type fields
-exports.downloadMediaFiles = async ({
-  entities,
-  apiURL,
-  store,
-  cache,
-  createNode,
-  createNodeId,
-  touchNode,
-  jwtToken: auth,
-}) => {
-  const context = { apiURL, store, cache, createNode, createNodeId, touchNode, auth };
-
-  const extractEntity = async (entity) => {
-    for (let item of entity) {
-      await extractFields(item, context);
-    }
-
-    return entity;
-  };
-
-  return Promise.all(entities.map((entity) => extractEntity(entity)));
+exports.downloadMediaFiles = async (entities, ctx) => {
+  return Promise.all(entities.map((entity) => extractFields(entity, ctx)));
 };
