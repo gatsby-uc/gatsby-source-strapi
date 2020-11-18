@@ -2,9 +2,12 @@
 
 Source plugin for pulling documents into Gatsby from a Strapi API.
 
+
+> **WARNING**: This is the README for v1.0.0-alpha.0 make sure to install it with @alpha to try it out
+
 ## Install
 
-`npm install --save gatsby-source-strapi`
+`npm install --save gatsby-source-strapi@alpha`
 
 ## How to use
 
