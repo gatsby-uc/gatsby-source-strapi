@@ -2,18 +2,13 @@
   "sourceMaps": true,
   "presets": [
     [
-      "env",
+      "@babel/preset-env",
       {
         "targets": {
-          "node": 4.0,
-          "uglify": true
+          "node": 10
         }
       }
     ]
   ],
-  "plugins": [
-    "transform-runtime",
-    "transform-object-rest-spread",
-    "transform-async-to-generator"
-  ]
+  "plugins": ["@babel/plugin-transform-runtime"]
 }
