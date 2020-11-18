@@ -1,24 +1,30 @@
-import fetchData from './fetch'
-import { Node } from './nodes'
-import { capitalize } from 'lodash'
-import normalize from './normalize'
-import authentication from './authentication'
+import fetchData from './fetch';
+import { Node } from './nodes';
+import { capitalize } from 'lodash';
+import normalize from './normalize';
+import authentication from './authentication';
 
 exports.sourceNodes = async (
-  { store, actions, cache, reporter, getNode, getNodes },
-  { apiURL = 'http://localhost:1337', contentTypes = [], singleTypes = [], loginData = {}, queryLimit = 100 }
+  { store, actions, cache, reporter, getNode, getNodes, createNodeId },
+  {
+    apiURL = 'http://localhost:1337',
+    contentTypes = [],
+    singleTypes = [],
+    loginData = {},
+    queryLimit = 100,
+  }
 ) => {
-  const { createNode, deleteNode, touchNode } = actions
+  const { createNode, deleteNode, touchNode } = actions;
 
   // Authentication function
-  const jwtToken = await authentication({ loginData, reporter, apiURL })
+  const jwtToken = await authentication({ loginData, reporter, apiURL });
 
   // Start activity, Strapi data fetching
-  const fetchActivity = reporter.activityTimer(`Fetched Strapi Data`)
-  fetchActivity.start()
+  const fetchActivity = reporter.activityTimer(`Fetched Strapi Data`);
+  fetchActivity.start();
 
   // Generate a list of promises based on the `contentTypes` option.
-  const contentTypePromises = contentTypes.map(contentType =>
+  const contentTypePromises = contentTypes.map((contentType) =>
     fetchData({
       apiURL,
       contentType,
@@ -26,10 +32,10 @@ exports.sourceNodes = async (
       queryLimit,
       reporter,
     })
-  )
+  );
 
   // Generate a list of promises based on the `singleTypes` option.
-  const singleTypePromises = singleTypes.map(singleType =>
+  const singleTypePromises = singleTypes.map((singleType) =>
     fetchData({
       apiURL,
       singleType,
@@ -37,10 +43,10 @@ exports.sourceNodes = async (
       queryLimit,
       reporter,
     })
-  )
+  );
 
   // Execute the promises
-  let entities = await Promise.all([...contentTypePromises, ...singleTypePromises])
+  let entities = await Promise.all([...contentTypePromises, ...singleTypePromises]);
 
   // Creating files
   entities = await normalize.downloadMediaFiles({
@@ -49,41 +55,42 @@ exports.sourceNodes = async (
     store,
     cache,
     createNode,
+    createNodeId,
     touchNode,
     jwtToken,
-  })
+  });
 
   // new created nodes
-  let newNodes = []
+  let newNodes = [];
 
   // Fetch existing strapi nodes
-  const existingNodes = getNodes().filter(n => n.internal.owner === `gatsby-source-strapi`)
+  const existingNodes = getNodes().filter((n) => n.internal.owner === `gatsby-source-strapi`);
 
   // Touch each one of them
-  existingNodes.forEach(n => {
-    touchNode({ nodeId: n.id })
-  })
+  existingNodes.forEach((n) => {
+    touchNode({ nodeId: n.id });
+  });
 
   // Merge single and content types and retrieve create nodes
   contentTypes.concat(singleTypes).forEach((contentType, i) => {
-    const items = entities[i]
-    items.forEach(item => {
-      const node = Node(capitalize(contentType), item)
+    const items = entities[i];
+    items.forEach((item) => {
+      const node = Node(capitalize(contentType), item);
       // Adding new created nodes in an Array
-      newNodes.push(node)
+      newNodes.push(node);
 
       // Create nodes
-      createNode(node)
-    })
-  })
+      createNode(node);
+    });
+  });
 
   // Make a diff array between existing nodes and new ones
-  const diff = existingNodes.filter(({ id: id1 }) => !newNodes.some(({ id: id2 }) => id2 === id1))
+  const diff = existingNodes.filter(({ id: id1 }) => !newNodes.some(({ id: id2 }) => id2 === id1));
 
   // Delete diff nodes
-  diff.forEach(data => {
-    deleteNode({ node: getNode(data.id) })
-  })
+  diff.forEach((data) => {
+    deleteNode({ node: getNode(data.id) });
+  });
 
-  fetchActivity.end()
-}
+  fetchActivity.end();
+};

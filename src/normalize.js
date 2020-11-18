@@ -1,72 +1,97 @@
-import { has } from 'lodash/fp'
-const { createRemoteFileNode } = require(`gatsby-source-filesystem`)
+import { has, isObject } from 'lodash/fp';
+import { createRemoteFileNode } from 'gatsby-source-filesystem';
 
-const extractFields = async (apiURL, store, cache, createNode, touchNode, auth, item) => {
-  for (const key of Object.keys(item)) {
-    const field = item[key]
-    if (Array.isArray(field)) {
-      // add recursion to fetch nested strapi references
-      await Promise.all(field.map(async f => extractFields(apiURL, store, cache, createNode, touchNode, auth, f)))
-    } else {
-      // image fields have a mime property among other
-      // maybe should find a better test
-      if (field !== null && has('mime', field)) {
-        let fileNodeID
-        // using field on the cache key for multiple image field
-        const mediaDataCacheKey = `strapi-media-${item.id}-${key}`
-        const cacheMediaData = await cache.get(mediaDataCacheKey)
+const isImage = has('mime');
+const getUpdatedAt = (image) => image.updatedAt || image.updated_at;
 
-        // If we have cached media data and it wasn't modified, reuse
-        // previously created file node to not try to redownload
-        if (cacheMediaData && field.updated_at === cacheMediaData.updated_at) {
-          fileNodeID = cacheMediaData.fileNodeID
-          touchNode({ nodeId: cacheMediaData.fileNodeID })
-        }
+const extractImage = async (image, context) => {
+  const { apiURL, store, cache, createNode, createNodeId, touchNode, auth } = context;
 
-        // If we don't have cached data, download the file
-        if (!fileNodeID) {
-          try {
-            // full media url
-            const source_url = `${field.url.startsWith('http') ? '' : apiURL}${field.url}`
-            const fileNode = await createRemoteFileNode({
-              url: source_url,
-              store,
-              cache,
-              createNode,
-              auth,
-            })
+  let fileNodeID;
 
-            // If we don't have cached data, download the file
-            if (fileNode) {
-              fileNodeID = fileNode.id
+  // using field on the cache key for multiple image field
+  const mediaDataCacheKey = `strapi-media-${image.id}`;
+  const cacheMediaData = await cache.get(mediaDataCacheKey);
 
-              await cache.set(mediaDataCacheKey, {
-                fileNodeID,
-                updated_at: field.updated_at,
-              })
-            }
-          } catch (e) {
-            // Ignore
-          }
-        }
-        if (fileNodeID) {
-          item[`${key}___NODE`] = fileNodeID
-        }
-      } else if (field !== null && typeof field === 'object') {
-        await extractFields(apiURL, store, cache, createNode, touchNode, auth, field)
-      }
+  // If we have cached media data and it wasn't modified, reuse
+  // previously created file node to not try to redownload
+  if (cacheMediaData && getUpdatedAt(image) === cacheMediaData.updatedAt) {
+    fileNodeID = cacheMediaData.fileNodeID;
+    touchNode({ nodeId: fileNodeID });
+  }
+
+  // If we don't have cached data, download the file
+  if (!fileNodeID) {
+    // full media url
+    const source_url = `${image.url.startsWith('http') ? '' : apiURL}${image.url}`;
+    const fileNode = await createRemoteFileNode({
+      url: source_url,
+      store,
+      cache,
+      createNode,
+      createNodeId,
+      auth,
+      ext: image.ext,
+      name: image.name,
+    });
+
+    if (fileNode) {
+      fileNodeID = fileNode.id;
+
+      await cache.set(mediaDataCacheKey, {
+        fileNodeID,
+        updatedAt: getUpdatedAt(image),
+      });
     }
   }
-}
+
+  if (fileNodeID) {
+    image.localFile___NODE = fileNodeID;
+  }
+};
+
+const extractFields = async (item, context) => {
+  if (isImage(item)) {
+    return extractImage(item, context);
+  }
+
+  if (Array.isArray(item)) {
+    for (const element of item) {
+      await extractFields(element, context);
+    }
+
+    return;
+  }
+
+  if (isObject(item)) {
+    for (const key in item) {
+      await extractFields(item[key], context);
+    }
+
+    return;
+  }
+};
 
 // Downloads media from image type fields
-exports.downloadMediaFiles = async ({ entities, apiURL, store, cache, createNode, touchNode, jwtToken: auth }) =>
-  Promise.all(
-    entities.map(async entity => {
-      for (let item of entity) {
-        // loop item over fields
-        await extractFields(apiURL, store, cache, createNode, touchNode, auth, item)
-      }
-      return entity
-    })
-  )
+exports.downloadMediaFiles = async ({
+  entities,
+  apiURL,
+  store,
+  cache,
+  createNode,
+  createNodeId,
+  touchNode,
+  jwtToken: auth,
+}) => {
+  const context = { apiURL, store, cache, createNode, createNodeId, touchNode, auth };
+
+  const extractEntity = async (entity) => {
+    for (let item of entity) {
+      await extractFields(item, context);
+    }
+
+    return entity;
+  };
+
+  return Promise.all(entities.map((entity) => extractEntity(entity)));
+};
