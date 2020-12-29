@@ -13,7 +13,7 @@ const extractFields = async (
   useNamedImages
 ) => {
   if (!item) {
-    return;
+    return
   }
   if (item.hasOwnProperty('mime')) {
     // This allows us to run qraphql like:
