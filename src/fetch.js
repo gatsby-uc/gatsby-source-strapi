@@ -2,12 +2,12 @@ import axios from 'axios';
 import { isObject, forEach, set, castArray, startsWith } from 'lodash';
 
 module.exports = async (endpoint, ctx) => {
-  const { apiURL, queryLimit, jwtToken, reporter } = ctx;
+  const { apiURL, queryLimit, publicationState, jwtToken, reporter } = ctx;
 
   // Define API endpoint.
   let apiBase = `${apiURL}/${endpoint}`;
 
-  const apiEndpoint = `${apiBase}?_limit=${queryLimit}`;
+  const apiEndpoint = `${apiBase}?_limit=${queryLimit}&_publicationState=${publicationState}`;
 
   reporter.info(`Starting to fetch data from Strapi - ${apiEndpoint}`);
 

@@ -19,6 +19,7 @@ plugins: [
     options: {
       apiURL: `http://localhost:1337`,
       queryLimit: 1000, // Default to 100
+      publicationState: 'preview', // Default to live
       contentTypes: [
         `article`,
         `user`,

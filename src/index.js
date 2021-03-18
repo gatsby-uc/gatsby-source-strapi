@@ -26,7 +26,13 @@ const fetchEntities = async ({ endpoint }, ctx) => {
 
 exports.sourceNodes = async (
   { store, actions, cache, reporter, getNode, getNodes, createNodeId },
-  { apiURL = 'http://localhost:1337', loginData = {}, queryLimit = 100, ...options }
+  {
+    apiURL = 'http://localhost:1337',
+    loginData = {},
+    queryLimit = 100,
+    publicationState = 'live',
+    ...options
+  }
 ) => {
   const { createNode, deleteNode, touchNode } = actions;
 
@@ -38,6 +44,7 @@ exports.sourceNodes = async (
     createNode,
     createNodeId,
     queryLimit,
+    publicationState,
     apiURL,
     jwtToken,
     reporter,
