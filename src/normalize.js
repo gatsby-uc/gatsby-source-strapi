@@ -72,6 +72,7 @@ const extractFields = async (item, ctx) => {
   }
 };
 
-export const normalizeEntities = async (entities, ctx) => {
+// Downloads media from image type fields
+exports.downloadMediaFiles = async (entities, ctx) => {
   return Promise.all(entities.map((entity) => extractFields(entity, ctx)));
 };
