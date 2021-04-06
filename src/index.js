@@ -25,7 +25,7 @@ const fetchEntities = async ({ endpoint }, ctx) => {
 };
 
 exports.sourceNodes = async (
-  { store, actions, cache, reporter, getNode, getNodes, createNodeId },
+  { store, actions, cache, reporter, getNode, getNodes, createNodeId, createContentDigest },
   { apiURL = 'http://localhost:1337', loginData = {}, queryLimit = 100, ...options }
 ) => {
   const { createNode, deleteNode, touchNode } = actions;
@@ -42,6 +42,7 @@ exports.sourceNodes = async (
     jwtToken,
     reporter,
     touchNode,
+    createContentDigest,
   };
 
   // Start activity, Strapi data fetching
@@ -67,8 +68,18 @@ exports.sourceNodes = async (
 
   // Merge single and content types and retrieve create nodes
   types.forEach(({ name }, i) => {
+    const { createTypes } = actions;
+    const typeDefs = `
+      type Strapi${capitalize(name)} implements Node {
+        dz: JSON
+      }
+    `;
+
+    createTypes(typeDefs);
+
     const items = entities[i];
     items.forEach((item) => {
+      console.log(item);
       const node = Node(capitalize(name), item);
       // Adding new created nodes in an Array
       newNodes.push(node);
