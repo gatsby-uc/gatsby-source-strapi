@@ -1,5 +1,5 @@
 import pluralize from 'pluralize';
-import { capitalize } from 'lodash';
+import { capitalize, has, isPlainObject, isArray } from 'lodash';
 
 import fetchData from './fetch';
 import { Node } from './nodes';
@@ -22,6 +22,20 @@ const fetchEntities = async ({ endpoint }, ctx) => {
   await normalize.downloadMediaFiles(entities, ctx);
 
   return entities;
+};
+
+const isDynamicZone = (node) => {
+  // Dynamic zones are always arrays
+  if (isArray(node)) {
+    return node.some((nodeItem) => {
+      if (isPlainObject(nodeItem)) {
+        // The object is a dynamic zone if it has a strapi_component key
+        return has(nodeItem, 'strapi_component');
+      }
+      return false;
+    });
+  }
+  return false;
 };
 
 exports.sourceNodes = async (
@@ -69,17 +83,35 @@ exports.sourceNodes = async (
   // Merge single and content types and retrieve create nodes
   types.forEach(({ name }, i) => {
     const { createTypes } = actions;
-    const typeDefs = `
-      type Strapi${capitalize(name)} implements Node {
-        dz: JSON
-      }
-    `;
-
-    createTypes(typeDefs);
-
     const items = entities[i];
+
+    // Search for dynamic zones in all items
+    const dynamicZoneFields = [];
+    const entries = items.flatMap((item) => Object.entries(item));
+    entries.forEach(([field, value]) => {
+      if (isDynamicZone(value)) {
+        // Add to the list of dynamic zone fields if it's not already there
+        if (!dynamicZoneFields.includes(field)) {
+          dynamicZoneFields.push(field);
+        }
+      }
+    });
+
+    // Cast dynamic zone fields to JSON
+    if (dynamicZoneFields.length > 0) {
+      const typeDefs = `
+        type Strapi${capitalize(name)} implements Node {
+          ${dynamicZoneFields.map(
+            (field) => `
+          ${field}: JSON
+          `
+          )}
+        }
+      `;
+      createTypes(typeDefs);
+    }
+
     items.forEach((item) => {
-      console.log(item);
       const node = Node(capitalize(name), item);
       // Adding new created nodes in an Array
       newNodes.push(node);
