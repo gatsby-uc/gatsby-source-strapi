@@ -72,6 +72,17 @@ const extractFields = async (item, ctx) => {
   }
 };
 
+exports.isDynamicZone = (node) => {
+  // Dynamic zones are always arrays
+  if (Array.isArray(node)) {
+    return node.some((nodeItem) => {
+      // The object is a dynamic zone if it has a strapi_component key
+      return has('strapi_component', nodeItem);
+    });
+  }
+  return false;
+};
+
 // Downloads media from image type fields
 exports.downloadMediaFiles = async (entities, ctx) => {
   return Promise.all(entities.map((entity) => extractFields(entity, ctx)));

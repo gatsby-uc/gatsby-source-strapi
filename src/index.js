@@ -1,5 +1,5 @@
 import pluralize from 'pluralize';
-import { capitalize, has, isPlainObject, isArray } from 'lodash';
+import _, { capitalize } from 'lodash';
 
 import fetchData from './fetch';
 import { Node } from './nodes';
@@ -24,22 +24,33 @@ const fetchEntities = async ({ endpoint }, ctx) => {
   return entities;
 };
 
-const isDynamicZone = (node) => {
-  // Dynamic zones are always arrays
-  if (isArray(node)) {
-    return node.some((nodeItem) => {
-      if (isPlainObject(nodeItem)) {
-        // The object is a dynamic zone if it has a strapi_component key
-        return has(nodeItem, 'strapi_component');
+const addDynamicZoneFieldsToSchema = ({ type, items, actions, schema }) => {
+  const { createTypes } = actions;
+  // Search for dynamic zones in all items
+  const dynamicZoneFields = {};
+
+  items.forEach((item) => {
+    _.forEach(item, (value, field) => {
+      if (normalize.isDynamicZone(value)) {
+        dynamicZoneFields[field] = 'JSON';
       }
-      return false;
     });
+  });
+
+  // Cast dynamic zone fields to JSON
+  if (!_.isEmpty(dynamicZoneFields)) {
+    const typeDef = schema.buildObjectType({
+      name: `Strapi${capitalize(type)}`,
+      fields: dynamicZoneFields,
+      interfaces: ['Node'],
+    });
+
+    createTypes([typeDef]);
   }
-  return false;
 };
 
 exports.sourceNodes = async (
-  { store, actions, cache, reporter, getNode, getNodes, createNodeId, createContentDigest },
+  { store, actions, cache, reporter, getNode, getNodes, createNodeId, createContentDigest, schema },
   { apiURL = 'http://localhost:1337', loginData = {}, queryLimit = 100, ...options }
 ) => {
   const { createNode, deleteNode, touchNode } = actions;
@@ -57,6 +68,7 @@ exports.sourceNodes = async (
     reporter,
     touchNode,
     createContentDigest,
+    schema,
   };
 
   // Start activity, Strapi data fetching
@@ -78,38 +90,13 @@ exports.sourceNodes = async (
   const existingNodes = getNodes().filter((n) => n.internal.owner === `gatsby-source-strapi`);
 
   // Touch each one of them
-  existingNodes.forEach((n) => touchNode({ nodeId: n.id }));
+  existingNodes.forEach((node) => touchNode({ nodeId: node.id }));
 
   // Merge single and content types and retrieve create nodes
   types.forEach(({ name }, i) => {
-    const { createTypes } = actions;
     const items = entities[i];
 
-    // Search for dynamic zones in all items
-    const dynamicZoneFields = [];
-    const entries = items.flatMap((item) => Object.entries(item));
-    entries.forEach(([field, value]) => {
-      if (isDynamicZone(value)) {
-        // Add to the list of dynamic zone fields if it's not already there
-        if (!dynamicZoneFields.includes(field)) {
-          dynamicZoneFields.push(field);
-        }
-      }
-    });
-
-    // Cast dynamic zone fields to JSON
-    if (dynamicZoneFields.length > 0) {
-      const typeDefs = `
-        type Strapi${capitalize(name)} implements Node {
-          ${dynamicZoneFields.map(
-            (field) => `
-          ${field}: JSON
-          `
-          )}
-        }
-      `;
-      createTypes(typeDefs);
-    }
+    addDynamicZoneFieldsToSchema({ type: name, items, actions, schema });
 
     items.forEach((item) => {
       const node = Node(capitalize(name), item);
