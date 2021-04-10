@@ -60,6 +60,7 @@ exports.sourceNodes = async (
   const ctx = {
     store,
     cache,
+    getNode,
     createNode,
     createNodeId,
     queryLimit,
@@ -90,7 +91,7 @@ exports.sourceNodes = async (
   const existingNodes = getNodes().filter((n) => n.internal.owner === `gatsby-source-strapi`);
 
   // Touch each one of them
-  existingNodes.forEach((node) => touchNode({ nodeId: node.id }));
+  existingNodes.forEach((node) => touchNode(node));
 
   // Merge single and content types and retrieve create nodes
   types.forEach(({ name }, i) => {
@@ -114,7 +115,7 @@ exports.sourceNodes = async (
   });
 
   // Delete diff nodes
-  diff.forEach((node) => deleteNode({ node: getNode(node.id) }));
+  diff.forEach((node) => deleteNode(getNode(node.id)));
 
   fetchActivity.end();
 };

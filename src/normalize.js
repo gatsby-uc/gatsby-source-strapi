@@ -5,7 +5,7 @@ const isImage = has('mime');
 const getUpdatedAt = (image) => image.updatedAt || image.updated_at;
 
 const extractImage = async (image, ctx) => {
-  const { apiURL, store, cache, createNode, createNodeId, touchNode, auth } = ctx;
+  const { apiURL, store, cache, createNode, createNodeId, touchNode, getNode, auth } = ctx;
 
   let fileNodeID;
 
@@ -17,7 +17,7 @@ const extractImage = async (image, ctx) => {
   // previously created file node to not try to redownload
   if (cacheMediaData && getUpdatedAt(image) === cacheMediaData.updatedAt) {
     fileNodeID = cacheMediaData.fileNodeID;
-    touchNode({ nodeId: fileNodeID });
+    touchNode(getNode(fileNodeID));
   }
 
   // If we don't have cached data, download the file
