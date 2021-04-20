@@ -1,5 +1,5 @@
 import pluralize from 'pluralize';
-import { capitalize } from 'lodash';
+import _, { capitalize } from 'lodash';
 
 import fetchData from './fetch';
 import { Node } from './nodes';
@@ -24,8 +24,33 @@ const fetchEntities = async ({ endpoint }, ctx) => {
   return entities;
 };
 
+const addDynamicZoneFieldsToSchema = ({ type, items, actions, schema }) => {
+  const { createTypes } = actions;
+  // Search for dynamic zones in all items
+  const dynamicZoneFields = {};
+
+  items.forEach((item) => {
+    _.forEach(item, (value, field) => {
+      if (normalize.isDynamicZone(value)) {
+        dynamicZoneFields[field] = 'JSON';
+      }
+    });
+  });
+
+  // Cast dynamic zone fields to JSON
+  if (!_.isEmpty(dynamicZoneFields)) {
+    const typeDef = schema.buildObjectType({
+      name: `Strapi${capitalize(type)}`,
+      fields: dynamicZoneFields,
+      interfaces: ['Node'],
+    });
+
+    createTypes([typeDef]);
+  }
+};
+
 exports.sourceNodes = async (
-  { store, actions, cache, reporter, getNode, getNodes, createNodeId },
+  { store, actions, cache, reporter, getNode, getNodes, createNodeId, createContentDigest, schema },
   { apiURL = 'http://localhost:1337', loginData = {}, queryLimit = 100, ...options }
 ) => {
   const { createNode, deleteNode, touchNode } = actions;
@@ -35,6 +60,7 @@ exports.sourceNodes = async (
   const ctx = {
     store,
     cache,
+    getNode,
     createNode,
     createNodeId,
     queryLimit,
@@ -42,6 +68,8 @@ exports.sourceNodes = async (
     jwtToken,
     reporter,
     touchNode,
+    createContentDigest,
+    schema,
   };
 
   // Start activity, Strapi data fetching
@@ -63,11 +91,14 @@ exports.sourceNodes = async (
   const existingNodes = getNodes().filter((n) => n.internal.owner === `gatsby-source-strapi`);
 
   // Touch each one of them
-  existingNodes.forEach((n) => touchNode({ nodeId: n.id }));
+  existingNodes.forEach((node) => touchNode(node));
 
   // Merge single and content types and retrieve create nodes
   types.forEach(({ name }, i) => {
     const items = entities[i];
+
+    addDynamicZoneFieldsToSchema({ type: name, items, actions, schema });
+
     items.forEach((item) => {
       const node = Node(capitalize(name), item);
       // Adding new created nodes in an Array
@@ -84,7 +115,7 @@ exports.sourceNodes = async (
   });
 
   // Delete diff nodes
-  diff.forEach((node) => deleteNode({ node: getNode(node.id) }));
+  diff.forEach((node) => deleteNode(getNode(node.id)));
 
   fetchActivity.end();
 };
