@@ -3,7 +3,7 @@
 Source plugin for pulling documents into Gatsby from a Strapi API.
 
 
-> **WARNING**: This is the README for v1.0.0-alpha.0 make sure to install it with @alpha to try it out
+> **WARNING**: This is the README for v1.0.0-alpha.0 make sure to install it with @alpha to try it out. It's designed to be used with Gatsby v3.
 
 ## Install
 
