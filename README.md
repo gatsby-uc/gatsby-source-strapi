@@ -27,6 +27,17 @@ plugins: [
           name: `collection-name`,
           endpoint: `custom-endpoint`,
         },
+        // if you want to use custom query strings (e.g. to fetch all locales)
+        // mapping of api.qs object will be used to create final query string (e.g: http://localhost:1337/collection-name?_locale=all)
+        {
+          name: `collection-name`,
+          api: { qs: { _locale: 'all' } }
+        },
+        // exemple fetching only english content
+        {
+          name: `collection-name`,
+          api: { qs: { _locale: 'en' } }
+        },
       ],
       //If using single types place them in this array.
       singleTypes: [`home-page`, `contact`],
@@ -57,6 +68,23 @@ You can query Document nodes created from your Strapi API like the following:
   }
 }
 ```
+
+You can query Document nodes in chosen language
+> make sure to add `api.qs._locale` to your strapi conf in `gatsby-config.js` (see example above)
+```graphql
+{
+  allStrapiArticle(filter: { locale: "en" }) {
+    edges {
+      node {
+        id
+        title
+        content
+      }
+    }
+  }
+}
+```
+
 
 To query images you can do the following:
 
