@@ -6,13 +6,18 @@ module.exports = async (entityDefinition, ctx) => {
 
   const { endpoint, api } = entityDefinition;
 
+  // Place global params first, so that they can be overriden by api.qs
+  const params = { _limit: queryLimit, ...api?.qs };
+
   // Retrieve qs params if defined (or empty string instead)
-  const qs = api ? Object.keys(api.qs).map((param) => `&${param}=${api.qs[param]}`) : ``;
+  const qs = Object.keys(params)
+    .map((param) => `${param}=${params[param]}`)
+    .join('&');
 
   // Define API endpoint.
   let apiBase = `${apiURL}/${endpoint}`;
 
-  const apiEndpoint = `${apiBase}?_limit=${queryLimit}${qs}`;
+  const apiEndpoint = `${apiBase}?${qs}`;
 
   reporter.info(`Starting to fetch data from Strapi - ${apiEndpoint}`);
 
