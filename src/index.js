@@ -7,8 +7,12 @@ import normalize from './normalize';
 import authentication from './authentication';
 
 const toTypeInfo = (type, { single = false }) => {
-  if (type.endpoint) {
-    return { endpoint: type.endpoint, name: type.name };
+  if (typeof type === 'object') {
+    return {
+      endpoint: type.endpoint || type.name,
+      name: type.name,
+      api: type.api,
+    };
   }
 
   return { endpoint: single ? type : pluralize(type), name: type };
@@ -17,8 +21,8 @@ const toTypeInfo = (type, { single = false }) => {
 const contentTypeToTypeInfo = toTypeInfo;
 const singleTypeToTypeInfo = (singleType) => toTypeInfo(singleType, { single: true });
 
-const fetchEntities = async ({ endpoint }, ctx) => {
-  const entities = await fetchData(endpoint, ctx);
+const fetchEntities = async (entityDefinition, ctx) => {
+  const entities = await fetchData(entityDefinition, ctx);
   await normalize.downloadMediaFiles(entities, ctx);
 
   return entities;

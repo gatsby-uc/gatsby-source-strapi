@@ -1,13 +1,18 @@
 import axios from 'axios';
 import { isObject, forEach, set, castArray, startsWith } from 'lodash';
 
-module.exports = async (endpoint, ctx) => {
+module.exports = async (entityDefinition, ctx) => {
   const { apiURL, queryLimit, jwtToken, reporter } = ctx;
+
+  const { endpoint, api } = entityDefinition;
+
+  // Retrieve qs params if defined (or empty string instead)
+  const qs = api ? Object.keys(api.qs).map((param) => `&${param}=${api.qs[param]}`) : ``;
 
   // Define API endpoint.
   let apiBase = `${apiURL}/${endpoint}`;
 
-  const apiEndpoint = `${apiBase}?_limit=${queryLimit}`;
+  const apiEndpoint = `${apiBase}?_limit=${queryLimit}${qs}`;
 
   reporter.info(`Starting to fetch data from Strapi - ${apiEndpoint}`);
 
