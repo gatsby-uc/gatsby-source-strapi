@@ -69,8 +69,10 @@ You can query Document nodes created from your Strapi API like the following:
 }
 ```
 
-You can query Document nodes in chosen language
-> make sure to add `api.qs._locale` to your strapi conf in `gatsby-config.js` (see example above)
+You can query Document nodes in a chosen language
+
+Make sure to add `api.qs._locale` to your strapi configuration in `gatsby-config.js` (see example above)
+
 ```graphql
 {
   allStrapiArticle(filter: { locale: "en" }) {
