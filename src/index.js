@@ -9,7 +9,7 @@ import authentication from './authentication';
 const toTypeInfo = (type, { single = false }) => {
   if (typeof type === 'object') {
     return {
-      endpoint: type.endpoint || type.name,
+      endpoint: type.endpoint || (single ? type.name : pluralize(type.name)),
       name: type.name,
       api: type.api,
     };
