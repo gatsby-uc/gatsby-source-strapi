@@ -80,10 +80,17 @@ exports.sourceNodes = async (
   const fetchActivity = reporter.activityTimer(`Fetched Strapi Data`);
   fetchActivity.start();
 
-  const contentTypes = (options.contentTypes || []).map(contentTypeToTypeInfo);
+  const collectionTypes = (options.collectionTypes || []).map(contentTypeToTypeInfo);
   const singleTypes = (options.singleTypes || []).map(singleTypeToTypeInfo);
 
-  const types = [...contentTypes, ...singleTypes];
+  // Let users know that options.contentTypes is deprecated
+  if (options.contentTypes) {
+    reporter.warn(
+      'Passing `contentTypes` to the gatsby-source-strapi options is deprecated. Use `collectionTypes` instead'
+    );
+  }
+
+  const types = [...collectionTypes, ...singleTypes];
 
   // Execute the promises
   const entities = await Promise.all(types.map((type) => fetchEntities(type, ctx)));
@@ -97,7 +104,7 @@ exports.sourceNodes = async (
   // Touch each one of them
   existingNodes.forEach((node) => touchNode(node));
 
-  // Merge single and content types and retrieve create nodes
+  // Merge single and collection types and retrieve create nodes
   types.forEach(({ name }, i) => {
     const items = entities[i];
 
