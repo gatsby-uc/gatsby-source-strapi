@@ -1,18 +1,30 @@
 import axios from 'axios';
 import { isObject, forEach, set, castArray, startsWith } from 'lodash';
 
-module.exports = async (endpoint, ctx) => {
+module.exports = async (entityDefinition, ctx) => {
   const { apiURL, queryLimit, jwtToken, reporter } = ctx;
+
+  const { endpoint, api } = entityDefinition;
 
   // Define API endpoint.
   let apiBase = `${apiURL}/${endpoint}`;
 
-  const apiEndpoint = `${apiBase}?_limit=${queryLimit}`;
+  const requestOptions = {
+    method: 'GET',
+    url: apiBase,
+    // Place global params first, so that they can be overriden by api.qs
+    params: { _limit: queryLimit, ...api?.qs },
+    headers: addAuthorizationHeader({}, jwtToken),
+  };
 
-  reporter.info(`Starting to fetch data from Strapi - ${apiEndpoint}`);
+  reporter.info(
+    `Starting to fetch data from Strapi - ${apiBase} with params ${JSON.stringify(
+      requestOptions.params
+    )}`
+  );
 
   try {
-    const { data } = await axios(apiEndpoint, addAuthorizationHeader({}, jwtToken));
+    const { data } = await axios(requestOptions);
     return castArray(data).map(clean);
   } catch (error) {
     reporter.panic(`Failed to fetch data from Strapi`, error);
