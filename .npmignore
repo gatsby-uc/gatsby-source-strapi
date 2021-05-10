@@ -34,3 +34,6 @@ decls
 examples
 .idea
 .eslintcache
+.babelrc
+.eslintrc.js
+.prettierrc.js
