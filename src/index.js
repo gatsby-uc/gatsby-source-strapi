@@ -83,13 +83,6 @@ exports.sourceNodes = async (
   const collectionTypes = (options.collectionTypes || []).map(contentTypeToTypeInfo);
   const singleTypes = (options.singleTypes || []).map(singleTypeToTypeInfo);
 
-  // Let users know that options.contentTypes is deprecated
-  if (options.contentTypes) {
-    reporter.warn(
-      'Passing `contentTypes` to the gatsby-source-strapi options is deprecated. Use `collectionTypes` instead'
-    );
-  }
-
   const types = [...collectionTypes, ...singleTypes];
 
   // Execute the promises
