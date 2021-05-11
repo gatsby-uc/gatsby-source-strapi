@@ -1,6 +1,6 @@
 {
   "name": "gatsby-source-strapi",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "Gatsby source plugin for building websites using Strapi as a data source",
   "author": {
     "email": "hi@strapi.io",
@@ -17,7 +17,10 @@
   "directories": {
     "lib": "./lib"
   },
-  "files": ["lib/*", "gatsby-node.js"],
+  "files": [
+    "lib/*",
+    "gatsby-node.js"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/strapi/gatsby-source-strapi.git"
