@@ -21,24 +21,24 @@ plugins: [
       collectionTypes: [
         `article`,
         `user`,
-        // If you don't want to leave the definition of an api endpoint to the pluralize module
+        // if you don't want to leave the definition of an api endpoint to the pluralize module
         {
           name: `collection-name`,
           endpoint: `custom-endpoint`,
         },
-        // If you want to use custom query strings (e.g. to fetch all locales)
-        // Mapping of api.qs object will be used to create final query string (e.g: http://localhost:1337/collection-name?_locale=all)
+        // if you want to use custom query strings (e.g. to fetch all locales)
+        // mapping of api.qs object will be used to create final query string (e.g: http://localhost:1337/collection-name?_locale=all)
         {
           name: `collection-name`,
           api: { qs: { _locale: 'all' } }
         },
-        // Example fetching only english content
+        // exemple fetching only english content
         {
           name: `collection-name`,
           api: { qs: { _locale: 'en' } }
         },
       ],
-      // If using single types place them in this array.
+      //If using single types place them in this array.
       singleTypes: [`home-page`, `contact`],
       // Possibility to login with a strapi user, when content types are not publically available (optional).
       loginData: {
