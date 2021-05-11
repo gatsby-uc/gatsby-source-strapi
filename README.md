@@ -2,7 +2,6 @@
 
 Source plugin for pulling documents into Gatsby from a Strapi API.
 
-
 > **WARNING**: This is the README for v1.0.0 which is in `alpha` version for now. Make sure to install it with @alpha to try it out. It's designed to be used with Gatsby v3.
 
 ## Install
@@ -19,7 +18,7 @@ plugins: [
     options: {
       apiURL: `http://localhost:1337`,
       queryLimit: 1000, // Default to 100
-      contentTypes: [
+      collectionTypes: [
         `article`,
         `user`,
         // if you don't want to leave the definition of an api endpoint to the pluralize module
