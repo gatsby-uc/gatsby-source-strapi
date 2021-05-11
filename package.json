@@ -17,6 +17,7 @@
   "directories": {
     "lib": "./lib"
   },
+  "files": ["lib/*", "gatsby-node.js"],
   "repository": {
     "type": "git",
     "url": "git://github.com/strapi/gatsby-source-strapi.git"
