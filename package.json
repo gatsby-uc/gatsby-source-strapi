@@ -45,7 +45,7 @@
     "axios": "0.21.1",
     "gatsby-node-helpers": "^0.3.0",
     "gatsby-source-filesystem": "^3.3.0",
-    "lodash": "4.17.20",
+    "lodash": "4.17.21",
     "pluralize": "8.0.0"
   },
   "devDependencies": {
