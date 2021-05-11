@@ -81,6 +81,12 @@ plugins: [
           name: `other-collection-name`,
           api: { qs: { _locale: `en` } }
         },
+        // Combined with a custom endpoint
+        {
+          name: `another-collection-name`,
+          endpoint: `custom-endpoint`,
+          api: { qs: { _locale: `en` } }
+        },
       ]
     },
   },
