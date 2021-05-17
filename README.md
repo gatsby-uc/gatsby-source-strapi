@@ -138,7 +138,7 @@ Make sure to add `api.qs._locale` to your strapi configuration in `gatsby-config
 
 ```graphql
 {
-  allStrapiArticle(filter: { locale: "en" }) {
+  allStrapiArticle(filter: { locale: { eq: "en" } }) {
     edges {
       node {
         id
