@@ -4,7 +4,7 @@ Source plugin for pulling documents into Gatsby from a Strapi API.
 
 > **WARNING**: This is the README for v1.0.0 which is in `alpha` version for now. Make sure to install it with @alpha to try it out. It's designed to be used with Gatsby v3.
 
-## Install
+## Installing the plugin
 
 ```sh
 # Using Yarn
@@ -14,7 +14,7 @@ yarn add gatsby-source-strapi@alpha
 npm install --save gatsby-source-strapi@alpha
 ```
 
-## How to use
+## Setting up the plugin
 
 You can enable and configure this plugin in your `gatsby-config.js` file.
 
@@ -114,7 +114,7 @@ plugins: [
 ];
 ```
 
-## How to query
+## Querying data
 
 You can query Document nodes created from your Strapi API like the following:
 
