@@ -31,8 +31,6 @@ const extractImage = async (image, ctx) => {
       createNode,
       createNodeId,
       auth,
-      ext: image.ext,
-      name: image.name,
     });
 
     if (fileNode) {
