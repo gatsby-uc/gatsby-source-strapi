@@ -12,7 +12,7 @@ module.exports = async ({
 }) => {
   // Define API endpoint.
   let apiBase = singleType ? `${apiURL}/${singleType}` : `${apiURL}/${pluralize(contentType)}`
-  
+
   const apiEndpoint = `${apiBase}?_limit=${queryLimit}`
 
   reporter.info(`Starting to fetch data from Strapi - ${apiEndpoint}`)
@@ -32,7 +32,7 @@ module.exports = async ({
   const response = Array.isArray(documents.data) ? documents.data : [ documents.data ]
 
   // Map and clean data.
-  return response.map(item => clean(item))
+  return response.map(item => item)
 }
 
 /**
