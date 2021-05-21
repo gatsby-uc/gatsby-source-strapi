@@ -91,6 +91,35 @@ plugins: [
 ];
 ```
 
+#### Draft content
+
+Strapi now supports [Draft and publish](https://strapi.io/documentation/developer-docs/latest/concepts/draft-and-publish.html#draft-and-publish), which allows you to save your content as a draft and publish it later. By default, this plugin will only fetch the published content.
+
+But you may want to fetch unpublished content in Gatsby as well. To do so, find a content type that has draft & publish enabled, and add an entity definition object to your config. Then, use the query string option to specify the [publication state](https://strapi.io/documentation/developer-docs/latest/developer-resources/content-api/content-api.html#publication-state) API parameter.
+
+```javascript
+// In your gatsby-config.js
+plugins: [
+  {
+    resolve: `gatsby-source-strapi`,
+    options: {
+      apiURL: `http://localhost:1337`,
+      collectionTypes: [
+        {
+          name: 'collection-name',
+          api: {
+            qs: {
+              // 'preview' fetches both draft & published content
+              _publicationState: 'preview',
+            }
+          }
+        }
+      ],
+    },
+  },
+],
+```
+
 #### Authenticated requests
 
 Strapi's [Roles & Permissions plugin](https://strapi.io/documentation/developer-docs/latest/development/plugins/users-permissions.html#concept) allows you to protect your API actions. If you need to access a route that is only available to a logged in user, you can provide your credentials so that this plugin can access to the protected data.
