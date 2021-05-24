@@ -60,7 +60,7 @@ const clean = (item) => {
 
 const addAuthorizationHeader = (options, token) => {
   if (token) {
-    set(options, 'headers.Authorization', `Bearer ${token}`);
+    set(options, 'Authorization', `Bearer ${token}`);
   }
 
   return options;
