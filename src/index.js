@@ -10,6 +10,7 @@ const toTypeInfo = (type, { single = false }) => {
   if (typeof type === 'object') {
     return {
       endpoint: type.endpoint || (single ? type.name : pluralize(type.name)),
+      loop: type.loop,
       name: type.name,
       api: type.api,
     };

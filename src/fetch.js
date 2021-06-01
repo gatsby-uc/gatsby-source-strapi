@@ -4,7 +4,7 @@ import { isObject, forEach, set, castArray, startsWith } from 'lodash';
 module.exports = async (entityDefinition, ctx) => {
   const { apiURL, queryLimit, jwtToken, reporter } = ctx;
 
-  const { endpoint, api } = entityDefinition;
+  const { endpoint, api, loop } = entityDefinition;
 
   // Define API endpoint.
   let apiBase = `${apiURL}/${endpoint}`;
@@ -24,11 +24,42 @@ module.exports = async (entityDefinition, ctx) => {
   );
 
   try {
+    if (typeof loop === 'number') {
+      return fetchLoop(reporter, queryLimit, requestOptions, loop);
+    }
+
     const { data } = await axios(requestOptions);
     return castArray(data).map(clean);
   } catch (error) {
     reporter.panic(`Failed to fetch data from Strapi`, error);
   }
+};
+
+const fetchLoop = async (
+  reporter,
+  queryLimit,
+  requestOptions,
+  loop,
+  resultsAggreg = [],
+  _start = 0
+) => {
+  reporter.info(`Loop fetching from ${_start} - ${requestOptions.url}`);
+  const { data } = await axios({
+    ...requestOptions,
+    params: {
+      ...requestOptions.params,
+      _limit: loop,
+      _start,
+    },
+  });
+  const newlyFetched = castArray(data).map(clean);
+  const newResults = resultsAggreg.concat(newlyFetched);
+  if (newlyFetched.length < loop || newResults.length >= queryLimit) {
+    reporter.info(`Loop fetching ended with ${newResults.length} items - ${requestOptions.url}`);
+    //ended
+    return newResults;
+  }
+  return fetchLoop(reporter, queryLimit, requestOptions, loop, newResults, _start + loop);
 };
 
 /**

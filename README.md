@@ -141,6 +141,30 @@ plugins: [
 ];
 ```
 
+#### Multiple requests instead of a single large one
+
+If you have many items in a collection and a single API call is a bit heavy for your server, you can split it into multiple requests.
+
+```javascript
+// In your gatsby-config.js
+plugins: [
+  {
+    resolve: `gatsby-source-strapi`,
+    options: {
+      apiURL: `http://localhost:1337`,
+      collectionTypes: [
+        // Fetch all locales for collection-name
+        {
+          name: `collection-name`,
+          api: { qs: { _sort: 'drop_date:DESC' } }, 
+          loop: 100,
+        },
+      ]
+    },
+  },
+];
+```
+
 ## Querying data
 
 You can query Document nodes created from your Strapi API like the following:
