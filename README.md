@@ -91,6 +91,42 @@ plugins: [
 ];
 ```
 
+For single types, the `all` value will not work, since single type queries do not return an array. If you want a single type to be available in different locales, add several entity definition objects for that same single type. The source plugin will merge them together, so you can access the right locale in your queries using the `locale` filter.
+
+```javascript
+// In your gatsby-config.js
+plugins: [
+  {
+    resolve: `gatsby-source-strapi`,
+    options: {
+      apiURL: `http://localhost:1337`,
+      singleTypes: [
+        {
+          name: 'single-type-name',
+          api: {
+            qs: {
+              _locale: 'en'
+            }
+          },
+        },
+        {
+          name: 'single-type-name',
+          api: {
+            qs: {
+              _locale: 'fr'
+            }
+          },
+        },
+      ],
+    },
+  },
+];
+```
+
+##### Localized collection types
+
+For single types, the `all` will not work, since single type queries do not return an array. Instead, if you 
+
 #### Draft content
 
 Strapi now supports [Draft and publish](https://strapi.io/documentation/developer-docs/latest/concepts/draft-and-publish.html#draft-and-publish), which allows you to save your content as a draft and publish it later. By default, this plugin will only fetch the published content.
