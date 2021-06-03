@@ -59,7 +59,7 @@ plugins: [
 
 #### Internationalization support
 
-Strapi now supports [internationalization](https://strapi.io/documentation/developer-docs/latest/development/plugins/i18n.html#installation). But by default, this plugin will only fetch data in the default locale of your Strapi app. If your content types are available in different locales, you can also pass an entity definition object to specify the locale you want to fetch for a content type. Use the `all` value to get all available locales.
+Strapi now supports [internationalization](https://strapi.io/documentation/developer-docs/latest/development/plugins/i18n.html#installation). But by default, this plugin will only fetch data in the default locale of your Strapi app. If your content types are available in different locales, you can also pass an entity definition object to specify the locale you want to fetch for a content type. Use the `all` value to get all available locales on a collection type.
 
 ```javascript
 // In your gatsby-config.js
@@ -86,6 +86,38 @@ plugins: [
           api: { qs: { _locale: `en` } }
         },
       ]
+    },
+  },
+];
+```
+
+For single types, the `all` value will not work, since single type queries do not return an array. If you want a single type to be available in different locales, add several entity definition objects for that same single type. The source plugin will merge them together, so you can access the right locale in your queries using the `locale` filter.
+
+```javascript
+// In your gatsby-config.js
+plugins: [
+  {
+    resolve: `gatsby-source-strapi`,
+    options: {
+      apiURL: `http://localhost:1337`,
+      singleTypes: [
+        {
+          name: 'single-type-name',
+          api: {
+            qs: {
+              _locale: 'en'
+            }
+          },
+        },
+        {
+          name: 'single-type-name',
+          api: {
+            qs: {
+              _locale: 'fr'
+            }
+          },
+        },
+      ],
     },
   },
 ];
