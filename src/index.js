@@ -1,5 +1,5 @@
 import pluralize from 'pluralize';
-import _, { capitalize } from 'lodash';
+import _, { upperFirst, camelCase, capitalize } from 'lodash';
 
 import fetchData from './fetch';
 import { Node } from './nodes';
@@ -44,7 +44,7 @@ const addDynamicZoneFieldsToSchema = ({ type, items, actions, schema }) => {
   // Cast dynamic zone fields to JSON
   if (!_.isEmpty(dynamicZoneFields)) {
     const typeDef = schema.buildObjectType({
-      name: `Strapi${capitalize(type)}`,
+      name: `Strapi${upperFirst(camelCase(type))}`,
       fields: dynamicZoneFields,
       interfaces: ['Node'],
     });
