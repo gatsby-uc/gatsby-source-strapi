@@ -173,6 +173,35 @@ plugins: [
 ];
 ```
 
+#### Default data
+It's possible to add default data, if by any chances your API request fails with error code 404.
+
+```javascript
+// In your gatsby-config.js
+plugins: [
+  {
+    resolve: `gatsby-source-strapi`,
+    options: {
+      apiURL: `http://localhost:1337`,
+      collectionTypes: [
+        {
+          name: 'collection-name',
+          api: {
+            qs: {
+              // 'preview' fetches both draft & published content
+              _publicationState: 'preview',
+            }
+          },
+          defaultData: {
+            // default data for collection-name
+          }
+        }
+      ],
+    },
+  },
+],
+```
+
 ## Querying data
 
 You can query Document nodes created from your Strapi API like the following:
