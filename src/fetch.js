@@ -4,7 +4,7 @@ import { isObject, forEach, set, castArray, startsWith } from 'lodash';
 module.exports = async (entityDefinition, ctx) => {
   const { apiURL, queryLimit, jwtToken, reporter } = ctx;
 
-  const { endpoint, api } = entityDefinition;
+  const { endpoint, api, defaultData } = entityDefinition;
 
   // Define API endpoint.
   let apiBase = `${apiURL}/${endpoint}`;
@@ -27,6 +27,10 @@ module.exports = async (entityDefinition, ctx) => {
     const { data } = await axios(requestOptions);
     return castArray(data).map(clean);
   } catch (error) {
+    if (error.response.status === 404 && defaultData) {
+      reporter.info(`Use Default Data for ${apiBase}`);
+      return castArray(defaultData).map(clean);
+    }
     reporter.panic(`Failed to fetch data from Strapi`, error);
   }
 };

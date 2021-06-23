@@ -12,6 +12,7 @@ const toTypeInfo = (type, { single = false }) => {
       endpoint: type.endpoint || (single ? type.name : pluralize(type.name)),
       name: type.name,
       api: type.api,
+      defaultData: type.defaultData,
     };
   }
 
