@@ -143,7 +143,7 @@ plugins: [
 
 #### Multiple requests instead of a single large one
 
-If you have many items in a collection and a single API call is a bit heavy for your server, you can split it into multiple requests.
+When you have many items in a collection, a single API call can be a bit heavy for your server. In that case, you can split your data fetching into multiple requests.
 
 ```javascript
 // In your gatsby-config.js
@@ -156,8 +156,7 @@ plugins: [
         // Fetch all locales for collection-name
         {
           name: `collection-name`,
-          api: { qs: { _sort: 'drop_date:DESC' } }, 
-          loop: 100,
+          api: { qs: { _sort: 'drop_date:DESC' }, loop: 100, }, 
         },
       ]
     },

@@ -4,7 +4,7 @@ import { isObject, forEach, set, castArray, startsWith } from 'lodash';
 module.exports = async (entityDefinition, ctx) => {
   const { apiURL, queryLimit, jwtToken, reporter } = ctx;
 
-  const { endpoint, api, loop } = entityDefinition;
+  const { endpoint, api } = entityDefinition;
 
   // Define API endpoint.
   let apiBase = `${apiURL}/${endpoint}`;
@@ -24,8 +24,8 @@ module.exports = async (entityDefinition, ctx) => {
   );
 
   try {
-    if (typeof loop === 'number') {
-      return fetchLoop(reporter, queryLimit, requestOptions, loop);
+    if (typeof api.loop === 'number' && api.loop >= 1) {
+      return fetchLoop({reporter, queryLimit, requestOptions, loop: Math.round(api.loop)});
     }
 
     const { data } = await axios(requestOptions);
@@ -35,31 +35,31 @@ module.exports = async (entityDefinition, ctx) => {
   }
 };
 
-const fetchLoop = async (
+const fetchLoop = async ({
   reporter,
   queryLimit,
   requestOptions,
-  loop,
+  loop = 1,
   resultsAggreg = [],
-  _start = 0
-) => {
-  reporter.info(`Loop fetching from ${_start} - ${requestOptions.url}`);
+  start = 0
+}) => {
+  reporter.info(`Loop fetching from ${start} - ${requestOptions.url}`);
   const { data } = await axios({
     ...requestOptions,
     params: {
       ...requestOptions.params,
       _limit: loop,
-      _start,
+      _start: start,
     },
   });
   const newlyFetched = castArray(data).map(clean);
   const newResults = resultsAggreg.concat(newlyFetched);
   if (newlyFetched.length < loop || newResults.length >= queryLimit) {
+    // we either ended the targetted "loop" number, or we have no more results to fetch
     reporter.info(`Loop fetching ended with ${newResults.length} items - ${requestOptions.url}`);
-    //ended
     return newResults;
   }
-  return fetchLoop(reporter, queryLimit, requestOptions, loop, newResults, _start + loop);
+  return fetchLoop({reporter, queryLimit, requestOptions, loop, resultsAggreg: newResults, start: start + loop});
 };
 
 /**
