@@ -26,7 +26,7 @@ plugins: [
     options: {
       apiURL: `http://localhost:1337`,
       queryLimit: 1000, // Defaults to 100
-      collectionTypes: [`article`, `user`],
+      contentTypes: [`article`, `user`],
       singleTypes: [`home-page`, `contact`],
     },
   },
@@ -46,7 +46,7 @@ plugins: [
     resolve: `gatsby-source-strapi`,
     options: {
       apiURL: `http://localhost:1337`,
-      collectionTypes: [
+      contentTypes: [
         {
           name: `collection-name`,
           endpoint: `custom-endpoint`,
@@ -68,7 +68,7 @@ plugins: [
     resolve: `gatsby-source-strapi`,
     options: {
       apiURL: `http://localhost:1337`,
-      collectionTypes: [
+      contentTypes: [
         // Fetch all locales for collection-name
         {
           name: `collection-name`,
@@ -136,7 +136,7 @@ plugins: [
     resolve: `gatsby-source-strapi`,
     options: {
       apiURL: `http://localhost:1337`,
-      collectionTypes: [
+      contentTypes: [
         {
           name: 'collection-name',
           api: {
@@ -163,7 +163,7 @@ plugins: [
     resolve: `gatsby-source-strapi`,
     options: {
       apiURL: `http://localhost:1337`,
-      collectionTypes: [`collection-name`],
+      contentTypes: [`collection-name`],
       loginData: {
         identifier: '',
         password: '',
