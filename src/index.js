@@ -28,18 +28,20 @@ const fetchEntities = async (entityDefinition, ctx) => {
   return entities;
 };
 
-const addDynamicZoneFieldsToSchema = ({ type, items, actions, schema }) => {
+const addDynamicZoneFieldsToSchema = ({ type, items, actions, schema, disableDZtoJSON}) => {
   const { createTypes } = actions;
   // Search for dynamic zones in all items
   const dynamicZoneFields = {};
 
-  items.forEach((item) => {
-    _.forEach(item, (value, field) => {
-      if (normalize.isDynamicZone(value)) {
-        dynamicZoneFields[field] = 'JSON';
-      }
+  if (!disableDZtoJSON) {
+    items.forEach((item) => {
+      _.forEach(item, (value, field) => {
+        if (normalize.isDynamicZone(value)) {
+          dynamicZoneFields[field] = 'JSON';
+        }
+      });
     });
-  });
+  }
 
   // Cast dynamic zone fields to JSON
   if (!_.isEmpty(dynamicZoneFields)) {
@@ -55,7 +57,7 @@ const addDynamicZoneFieldsToSchema = ({ type, items, actions, schema }) => {
 
 exports.sourceNodes = async (
   { store, actions, cache, reporter, getNode, getNodes, createNodeId, createContentDigest, schema },
-  { apiURL = 'http://localhost:1337', loginData = {}, queryLimit = 100, ...options }
+  { apiURL = 'http://localhost:1337', loginData = {}, queryLimit = 100, disableDZtoJSON = false, ...options }
 ) => {
   const { createNode, deleteNode, touchNode } = actions;
 
@@ -101,7 +103,7 @@ exports.sourceNodes = async (
   types.forEach(({ name }, i) => {
     const items = entities[i];
 
-    addDynamicZoneFieldsToSchema({ type: name, items, actions, schema });
+    addDynamicZoneFieldsToSchema({ type: name, items, actions, schema, disableDZtoJSON});
 
     items.forEach((item) => {
       const node = Node(capitalize(name), item);
