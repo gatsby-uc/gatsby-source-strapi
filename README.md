@@ -173,6 +173,46 @@ plugins: [
 ];
 ```
 
+##### Overwriting the `getToken` method
+
+By default, Strapi's authentication endpoint `/auth/local` is called with the provided `loginData`.  
+If you need to overwrite this mechanism, you can provide a `getToken` function which will be called with `loginData`, `apiURL` and Gatsby's `reporter`.
+
+The resulting `token` string will then be added as `Authorization: Bearer <token>` to Strapi requests as usual.
+
+```javascript
+// In your gatsby-config.js
+plugins: [
+  {
+    resolve: `gatsby-source-strapi`,
+    options: {
+      apiURL: `http://localhost:1337`,
+      collectionTypes: [`collection-name`],
+      loginData: {
+        identifier: '',
+        password: '',
+      },
+      getToken: async ({ loginData, apiURL, reporter }) => {
+        const authenticationActivity = reporter.activityTimer(`Authenticate Strapi User`);
+        authenticationActivity.start();
+
+        try {
+          const token = await yourCustomAuthentication({ loginData });
+          authenticationActivity.end();
+
+          // return the token string
+          return token;
+        } catch (e) {
+          reporter.panic('Strapi authentication error: ' + e);
+        }
+
+        return null;
+      }
+    },
+  },
+];
+```
+
 ## Querying data
 
 You can query Document nodes created from your Strapi API like the following:
