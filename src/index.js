@@ -55,11 +55,11 @@ const addDynamicZoneFieldsToSchema = ({ type, items, actions, schema }) => {
 
 exports.sourceNodes = async (
   { store, actions, cache, reporter, getNode, getNodes, createNodeId, createContentDigest, schema },
-  { apiURL = 'http://localhost:1337', loginData = {}, queryLimit = 100, ...options }
+  { apiURL = 'http://localhost:1337', loginData = {}, queryLimit = 100, getToken = authentication, ...options }
 ) => {
   const { createNode, deleteNode, touchNode } = actions;
 
-  const jwtToken = await authentication({ loginData, reporter, apiURL });
+  const jwtToken = await getToken({ loginData, reporter, apiURL });
 
   const ctx = {
     store,
