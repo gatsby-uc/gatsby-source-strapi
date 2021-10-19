@@ -1,4 +1,5 @@
 import axios from 'axios';
+import qs from 'qs';
 import { isObject, forEach, set, castArray, startsWith } from 'lodash';
 
 module.exports = async (entityDefinition, ctx) => {
@@ -7,13 +8,18 @@ module.exports = async (entityDefinition, ctx) => {
   const { endpoint, api } = entityDefinition;
 
   // Define API endpoint.
-  let apiBase = `${apiURL}/${endpoint}`;
+  let apiBase = `${apiURL}/api/${endpoint}`;
+  // const axiosInstance = axios.create({
+  //   paramsSerializer: (params) => qs.stringify(params),
+  //   headers:
+  // })
 
   const requestOptions = {
     method: 'GET',
     url: apiBase,
     // Place global params first, so that they can be overriden by api.qs
-    params: { _limit: queryLimit, ...api?.qs },
+    paramsSerializer: (params) => qs.stringify(params),
+    params: { pagination: { pageSize: queryLimit }, populate: '*', ...api?.qs },
     headers: addAuthorizationHeader({}, jwtToken),
   };
 
@@ -25,7 +31,8 @@ module.exports = async (entityDefinition, ctx) => {
 
   try {
     const { data } = await axios(requestOptions);
-    return castArray(data).map(clean);
+    console.log(data);
+    return castArray(data.data).map(clean);
   } catch (error) {
     reporter.panic(`Failed to fetch data from Strapi`, error);
   }
