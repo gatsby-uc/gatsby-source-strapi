@@ -9,10 +9,6 @@ module.exports = async (entityDefinition, ctx) => {
 
   // Define API endpoint.
   let apiBase = `${apiURL}/api/${endpoint}`;
-  // const axiosInstance = axios.create({
-  //   paramsSerializer: (params) => qs.stringify(params),
-  //   headers:
-  // })
 
   const requestOptions = {
     method: 'GET',
