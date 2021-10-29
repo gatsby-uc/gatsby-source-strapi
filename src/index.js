@@ -29,7 +29,7 @@ const fetchEntities = async (entityDefinition, ctx) => {
 };
 
 const addDynamicZoneFieldsToSchema = ({ type, items, actions, schema }) => {
-  const { createTypes } = actions;
+  const { createSchemaCustomization } = actions;
   // Search for dynamic zones in all items
   const dynamicZoneFields = {};
 
@@ -49,7 +49,7 @@ const addDynamicZoneFieldsToSchema = ({ type, items, actions, schema }) => {
       interfaces: ['Node'],
     });
 
-    createTypes([typeDef]);
+    createSchemaCustomization([typeDef]);
   }
 };
 
