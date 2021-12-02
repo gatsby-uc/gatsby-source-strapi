@@ -2,6 +2,8 @@
 
 Source plugin for pulling documents into Gatsby from a Strapi API.
 
+> ⚠️ This version of `gatsby-source-strapi` is only compatible with Strapi v3 at the moment. We are currently working on a v4 compatible version.
+
 ## Installing the plugin
 
 ```sh
