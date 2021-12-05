@@ -26,9 +26,8 @@ module.exports = async (entityDefinition, ctx) => {
   );
 
   try {
-    const { data } = await axios(requestOptions);
-    console.log(data);
-    return castArray(data.data).map(clean);
+    const { data: responseData } = await axios(requestOptions);
+    return castArray(responseData.data).map(clean);
   } catch (error) {
     reporter.panic(`Failed to fetch data from Strapi`, error);
   }

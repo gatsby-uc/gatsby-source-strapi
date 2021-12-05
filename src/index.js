@@ -22,11 +22,42 @@ const toTypeInfo = (type, { single = false }) => {
 const contentTypeToTypeInfo = toTypeInfo;
 const singleTypeToTypeInfo = (singleType) => toTypeInfo(singleType, { single: true });
 
+const provideToken = async ({ loginData, apiToken, reporter, apiURL }) => {
+  const validIdentifier = has('identifier', loginData) && loginData.identifier.length !== 0;
+  const validPassword = has('password', loginData) && loginData.password.length !== 0;
+  const validLoginData = validIdentifier && validPassword;
+
+  const validApiToken = apiToken !== null && apiToken.length !== 0;
+
+  if (validApiToken) {
+    if (validLoginData) {
+      reporter.warn(
+        'Strapi API token and login data are configured. API token will be used to authorize Strapi requests'
+      );
+    }
+    return apiToken;
+  }
+  if (validLoginData) {
+    return await authentication({ loginData, reporter, apiURL });
+  }
+  return null;
+};
+
 const fetchEntities = async (entityDefinition, ctx) => {
   const entities = await fetchData(entityDefinition, ctx);
   await normalize.downloadMediaFiles(entities, ctx);
 
   return entities;
+};
+
+const prepareItems = (items) => {
+  // as Strapi v4 delivers all fields in 'attributes' object - flat them to parent level to maintain backwards GraphQL queries compatibility
+  return _.map(items, (item) => {
+    const attributes = item.attributes;
+    delete item.attributes;
+
+    return _.merge(item, attributes);
+  });
 };
 
 const addDynamicZoneFieldsToSchema = ({ type, items, actions, schema }) => {
@@ -52,27 +83,6 @@ const addDynamicZoneFieldsToSchema = ({ type, items, actions, schema }) => {
 
     createTypes([typeDef]);
   }
-};
-
-const provideToken = async ({ loginData, apiToken, reporter, apiURL }) => {
-  const validIdentifier = has('identifier', loginData) && loginData.identifier.length !== 0;
-  const validPassword = has('password', loginData) && loginData.password.length !== 0;
-  const validLoginData = validIdentifier && validPassword;
-
-  const validApiToken = apiToken !== null && apiToken.length !== 0;
-
-  if (validApiToken) {
-    if (validLoginData) {
-      reporter.warn(
-        'Strapi API token and login data are configured. API token will be used to authorize Strapi requests'
-      );
-    }
-    return apiToken;
-  }
-  if (validLoginData) {
-    return await authentication({ loginData, reporter, apiURL });
-  }
-  return null;
 };
 
 exports.sourceNodes = async (
@@ -127,7 +137,7 @@ exports.sourceNodes = async (
 
   // Merge single and collection types and retrieve create nodes
   types.forEach(({ name }, i) => {
-    const items = entities[i];
+    const items = prepareItems(entities[i]);
 
     addDynamicZoneFieldsToSchema({ type: name, items, actions, schema });
 
