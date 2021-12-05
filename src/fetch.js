@@ -3,7 +3,7 @@ import qs from 'qs';
 import { isObject, forEach, set, castArray, startsWith } from 'lodash';
 
 module.exports = async (entityDefinition, ctx) => {
-  const { apiURL, queryLimit, jwtToken, reporter } = ctx;
+  const { apiURL, queryLimit, token, reporter } = ctx;
 
   const { endpoint, api } = entityDefinition;
 
@@ -16,7 +16,7 @@ module.exports = async (entityDefinition, ctx) => {
     // Place global params first, so that they can be overriden by api.qs
     paramsSerializer: (params) => qs.stringify(params),
     params: { pagination: { pageSize: queryLimit }, populate: '*', ...api?.qs },
-    headers: addAuthorizationHeader({}, jwtToken),
+    headers: addAuthorizationHeader({}, token),
   };
 
   reporter.info(

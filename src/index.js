@@ -5,6 +5,7 @@ import fetchData from './fetch';
 import { Node } from './nodes';
 import normalize from './normalize';
 import authentication from './authentication';
+import { has } from 'lodash/fp';
 
 const toTypeInfo = (type, { single = false }) => {
   if (typeof type === 'object') {
@@ -53,13 +54,40 @@ const addDynamicZoneFieldsToSchema = ({ type, items, actions, schema }) => {
   }
 };
 
+const provideToken = async ({ loginData, apiToken, reporter, apiURL }) => {
+  const validIdentifier = has('identifier', loginData) && loginData.identifier.length !== 0;
+  const validPassword = has('password', loginData) && loginData.password.length !== 0;
+  const validLoginData = validIdentifier && validPassword;
+
+  const validApiToken = apiToken !== null && apiToken.length !== 0;
+
+  if (validApiToken) {
+    if (validLoginData) {
+      reporter.warn(
+        'Strapi API token and login data are configured. API token will be used to authorize Strapi requests'
+      );
+    }
+    return apiToken;
+  }
+  if (validLoginData) {
+    return await authentication({ loginData, reporter, apiURL });
+  }
+  return null;
+};
+
 exports.sourceNodes = async (
   { store, actions, cache, reporter, getNode, getNodes, createNodeId, createContentDigest, schema },
-  { apiURL = 'http://localhost:1337', loginData = {}, queryLimit = 100, ...options }
+  {
+    apiURL = 'http://localhost:1337',
+    loginData = {},
+    apiToken = null,
+    queryLimit = 100,
+    ...options
+  }
 ) => {
   const { createNode, deleteNode, touchNode } = actions;
 
-  const jwtToken = await authentication({ loginData, reporter, apiURL });
+  const token = await provideToken({ loginData, apiToken, reporter, apiURL });
 
   const ctx = {
     store,
@@ -69,7 +97,7 @@ exports.sourceNodes = async (
     createNodeId,
     queryLimit,
     apiURL,
-    jwtToken,
+    token,
     reporter,
     touchNode,
     createContentDigest,

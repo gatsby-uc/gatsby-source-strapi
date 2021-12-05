@@ -154,7 +154,9 @@ plugins: [
 
 #### Authenticated requests
 
-Strapi's [Roles & Permissions plugin](https://strapi.io/documentation/developer-docs/latest/development/plugins/users-permissions.html#concept) allows you to protect your API actions. If you need to access a route that is only available to a logged in user, you can provide your credentials so that this plugin can access to the protected data.
+Strapi's authentication stategies can be based either on Strapi's [Roles & Permissions plugin](https://docs.strapi.io/developer-docs/latest/plugins/users-permissions.html#concept) or on built-in [API token feature](https://docs.strapi.io/developer-docs/latest/setup-deployment-guides/configurations/optional/api-tokens.html#api-tokens). If you need to access a route that is only available to a logged in user, you can provide user credentials or created API token to provide  access to the protected data for plugin.
+
+Warning: API token will take precedence over user credentials if both will be defined in configuration.
 
 ```javascript
 // In your gatsby-config.js
@@ -164,10 +166,13 @@ plugins: [
     options: {
       apiURL: `http://localhost:1337`,
       collectionTypes: [`collection-name`],
+      // if you want use user credentials
       loginData: {
         identifier: '',
         password: '',
       },
+      // if you want use generated API token
+      apiToken: '',
     },
   },
 ];
