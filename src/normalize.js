@@ -1,7 +1,11 @@
 import { has, isObject } from 'lodash/fp';
 import { createRemoteFileNode } from 'gatsby-source-filesystem';
+import { merge, cloneDeep, size } from 'lodash';
 
 const isImage = has('mime');
+const hasData = has('data');
+const hasId = has('id');
+const hasAttributes = has('attributes');
 const getUpdatedAt = (image) => image.updatedAt || image.updated_at;
 
 const extractImage = async (image, ctx) => {
@@ -46,28 +50,39 @@ const extractImage = async (image, ctx) => {
   if (fileNodeID) {
     image.localFile___NODE = fileNodeID;
   }
+  return image;
+};
+
+const flatMapAttributes = (item) => {
+  const attributes = cloneDeep(item.attributes);
+  delete item.attributes;
+  return merge(item, attributes);
 };
 
 const extractFields = async (item, ctx) => {
   if (isImage(item)) {
-    return extractImage(item, ctx);
+    return await extractImage(item, ctx);
   }
-
   if (Array.isArray(item)) {
-    for (const element of item) {
-      await extractFields(element, ctx);
-    }
-
-    return;
+    return Promise.all(item.map((entity) => extractFields(entity, ctx)));
   }
 
   if (isObject(item)) {
-    for (const key in item) {
-      await extractFields(item[key], ctx);
+    if (hasData(item) && size(item) === 1) {
+      return await extractFields(item.data, ctx);
+    }
+    if (hasId(item) && hasAttributes(item) && size(item) === 2) {
+      return await extractFields(flatMapAttributes(item), ctx);
     }
 
-    return;
+    var newObject = {};
+    for (const key in item) {
+      newObject[key] = await extractFields(item[key], ctx);
+    }
+    return newObject;
   }
+
+  return item;
 };
 
 exports.isDynamicZone = (node) => {

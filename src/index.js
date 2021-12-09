@@ -45,19 +45,7 @@ const provideToken = async ({ loginData, apiToken, reporter, apiURL }) => {
 
 const fetchEntities = async (entityDefinition, ctx) => {
   const entities = await fetchData(entityDefinition, ctx);
-  await normalize.downloadMediaFiles(entities, ctx);
-
-  return entities;
-};
-
-const prepareItems = (items) => {
-  // as Strapi v4 delivers all fields in 'attributes' object - flat them to parent level to maintain backwards GraphQL queries compatibility
-  return _.map(items, (item) => {
-    const attributes = item.attributes;
-    delete item.attributes;
-
-    return _.merge(item, attributes);
-  });
+  return await normalize.downloadMediaFiles(entities, ctx);
 };
 
 const addDynamicZoneFieldsToSchema = ({ type, items, actions, schema }) => {
@@ -137,7 +125,7 @@ exports.sourceNodes = async (
 
   // Merge single and collection types and retrieve create nodes
   types.forEach(({ name }, i) => {
-    const items = prepareItems(entities[i]);
+    const items = entities[i];
 
     addDynamicZoneFieldsToSchema({ type: name, items, actions, schema });
 
