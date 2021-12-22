@@ -1,6 +1,6 @@
 {
   "name": "gatsby-source-strapi",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Gatsby source plugin for building websites using Strapi as a data source",
   "author": {
     "email": "hi@strapi.io",
@@ -24,10 +24,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/strapi/gatsby-source-strapi.git"
+    "url": "git://github.com/touchlesscode/gatsby-source-strapi.git"
   },
   "bugs": {
-    "url": "https://github.com/strapi/gatsby-source-strapi/issues"
+    "url": "https://github.com/touchlesscode/gatsby-source-strapi/issues"
   },
   "license": "MIT",
   "homepage": "http://strapi.io",
