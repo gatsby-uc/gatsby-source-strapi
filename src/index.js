@@ -59,7 +59,7 @@ exports.sourceNodes = async (
 ) => {
   const { createNode, deleteNode, touchNode } = actions;
 
-  const jwtToken = await authentication({ loginData, reporter, apiURL });
+  const jwtToken = options.jwtToken || await authentication({ loginData, reporter, apiURL });
 
   const ctx = {
     store,
