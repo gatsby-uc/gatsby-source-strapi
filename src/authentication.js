@@ -2,10 +2,10 @@ import { has } from 'lodash/fp';
 import axios from 'axios';
 
 module.exports = async ({ loginData, reporter, apiURL }) => {
-  const validIndentifier = has('identifier', loginData) && loginData.identifier.length !== 0;
+  const validIdentifier = has('identifier', loginData) && loginData.identifier.length !== 0;
   const validPassword = has('password', loginData) && loginData.password.length !== 0;
 
-  if (validIndentifier && validPassword) {
+  if (validIdentifier && validPassword) {
     const authenticationActivity = reporter.activityTimer(`Authenticate Strapi User`);
     authenticationActivity.start();
 
