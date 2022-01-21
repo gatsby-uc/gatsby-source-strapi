@@ -41,7 +41,7 @@ const prepareRelationNode = (relation, ctx) => {
     internal: {
       type: `Strapi${_.capitalize(singularName)}`,
       content: JSON.stringify(relation),
-      contentDigest: relation.updatedAt || parentNode.updatedAt,
+      contentDigest: relation.updatedAt || parentNode.updatedAt || new Date().toISOString(),
     },
   };
 
@@ -66,6 +66,10 @@ const prepareTextNode = (text, ctx) => {
   };
 
   return textNode;
+};
+
+const createComponentsNode = async (entity, nodeType, ctx, uid) => {
+  await Promise.all(createNodes(entity, nodeType, ctx, uid));
 };
 
 export const createNodes = (entity, nodeType, ctx, uid) => {
@@ -98,6 +102,8 @@ export const createNodes = (entity, nodeType, ctx, uid) => {
 
     const attribute = schema.schema.attributes[attributeName];
 
+    // Create type for the first level of relations, otherwise the user should fetch the other content type
+    // to link them
     if (attribute?.type === 'relation' && value) {
       const config = {
         contentTypesSchemas,
@@ -107,6 +113,7 @@ export const createNodes = (entity, nodeType, ctx, uid) => {
         attributeName,
         targetSchemaUid: attribute.target,
       };
+
       if (Array.isArray(value)) {
         const relationNodes = value.map((relation) => prepareRelationNode(relation, config));
         entity[`${attributeName}___NODE`] = relationNodes.map(({ id }) => id);
@@ -128,6 +135,20 @@ export const createNodes = (entity, nodeType, ctx, uid) => {
         }
       }
       delete entity[attributeName];
+    }
+
+    // Apply transformations to components: markdown, json...
+    if (attribute?.type === 'component' && value) {
+      const componentSchema = getContentTypeSchema(contentTypesSchemas, attribute.component);
+      const componentNode = `Strapi${_.capitalize(componentSchema.schema.displayName)}`;
+
+      if (attribute.repeatable) {
+        value.forEach((v) => {
+          createComponentsNode(v, componentNode, ctx, attribute.component);
+        });
+      } else {
+        createComponentsNode(value, componentNode, ctx, attribute.component);
+      }
     }
 
     if (attribute?.type === 'richtext' && value) {
@@ -195,6 +216,17 @@ const extractImages = async (item, ctx, uid) => {
     //   return extractImages(value, ctx, attribute.target);
     // }
 
+    // Always extract images for components
+    if (attribute?.type === 'component' && value) {
+      if (attribute.repeatable) {
+        for (const element of value) {
+          await extractImages(element, ctx, attribute.component);
+        }
+      } else {
+        await extractImages(value, ctx, attribute.component);
+      }
+    }
+
     if (attribute?.type === 'media' && value) {
       const isMultiple = attribute.multiple;
       const imagesField = isMultiple ? value : [value];
@@ -247,7 +279,13 @@ const extractImages = async (item, ctx, uid) => {
       const images = files.filter((fileNodeID) => fileNodeID);
 
       if (images && images.length > 0) {
-        item[attributeName][`localFile___NODE`] = isMultiple ? images : images[0];
+        if (isMultiple) {
+          for (let i = 0; i < value.length; i++) {
+            item[attributeName][i][`localFile___NODE`] = images[i];
+          }
+        } else {
+          item[attributeName][`localFile___NODE`] = isMultiple ? images : images[0];
+        }
       }
     }
   }

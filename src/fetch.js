@@ -37,14 +37,26 @@ const cleanAttributes = (attributes, currentSchema, allSchemas) => {
   return Object.entries(attributes).reduce((acc, [name, value]) => {
     const attribute = currentSchema.schema.attributes[name];
 
-    // createdAt and updatedAt are not returned by the api
-    if (!['relation', 'media'].includes(attribute?.type)) {
-      acc[name] = value;
+    if (attribute?.type === 'component' && value) {
+      const isRepeatable = attribute.repeatable;
+      const compoSchema = getContentTypeSchema(allSchemas, attribute.component);
 
-      return acc;
+      if (isRepeatable) {
+        return {
+          ...acc,
+          [name]: value.map((v) => {
+            return cleanAttributes(v, compoSchema, allSchemas);
+          }),
+        };
+      }
+
+      return {
+        ...acc,
+        [name]: cleanAttributes(value, compoSchema, allSchemas),
+      };
     }
 
-    if (attribute.type === 'media') {
+    if (attribute?.type === 'media') {
       if (Array.isArray(value?.data)) {
         return {
           ...acc,
@@ -68,25 +80,31 @@ const cleanAttributes = (attributes, currentSchema, allSchemas) => {
       };
     }
 
-    const relationSchema = getContentTypeSchema(allSchemas, attribute.target);
+    if (attribute?.type === 'relation') {
+      const relationSchema = getContentTypeSchema(allSchemas, attribute.target);
 
-    if (Array.isArray(value?.data)) {
+      if (Array.isArray(value?.data)) {
+        return {
+          ...acc,
+          [name]: value.data.map(({ id, attributes }) =>
+            cleanAttributes({ id, ...attributes }, relationSchema, allSchemas)
+          ),
+        };
+      }
+
       return {
         ...acc,
-        [name]: value.data.map(({ id, attributes }) =>
-          cleanAttributes({ id, ...attributes }, relationSchema, allSchemas)
+        [name]: cleanAttributes(
+          value.data ? { id: value.data.id, ...value.data.attributes } : null,
+          relationSchema,
+          allSchemas
         ),
       };
     }
 
-    return {
-      ...acc,
-      [name]: cleanAttributes(
-        value.data ? { id: value.data.id, ...value.data.attributes } : null,
-        relationSchema,
-        allSchemas
-      ),
-    };
+    acc[name] = value;
+
+    return acc;
   }, {});
 };
 
@@ -102,11 +120,19 @@ const cleanData = ({ id, attributes }, ctx) => {
 
 const fetchStrapiContentTypes = async (pluginOptions) => {
   const axiosInstance = createInstance(pluginOptions);
-  const {
-    data: { data },
-  } = await axiosInstance.get('/api/content-type-builder/content-types');
+  const [
+    {
+      data: { data: contentTypes },
+    },
+    {
+      data: { data: components },
+    },
+  ] = await Promise.all([
+    axiosInstance.get('/api/content-type-builder/content-types'),
+    axiosInstance.get('/api/content-type-builder/components'),
+  ]);
 
-  return data;
+  return [...contentTypes, ...components];
 };
 
 const fetchEntity = async ({ endpoint, queryParams, uid }, ctx) => {
