@@ -121,7 +121,9 @@ export const createNodes = (entity, nodeType, ctx, uid) => {
 
         entity[`${attributeName}___NODE`] = relationNode.id;
 
-        if (!getNode(relationNode.id)) {
+        const relationNodeToCreate = getNode(relationNode.id);
+
+        if (!relationNodeToCreate) {
           nodes.push(createNode(relationNode));
         }
       }
@@ -140,9 +142,7 @@ export const createNodes = (entity, nodeType, ctx, uid) => {
       entity[`${attributeName}___NODE`] = textNode.id;
       delete entity[attributeName];
 
-      if (!getNode()) {
-        nodes.push(createNode(textNode));
-      }
+      nodes.push(createNode(textNode));
     }
 
     if (attribute?.type === 'json' && value) {
@@ -171,13 +171,14 @@ export const createNodes = (entity, nodeType, ctx, uid) => {
   return nodes;
 };
 
-// TODO components and DZ
+// TODO extract images for components and DZ
 const extractImages = async (item, ctx, uid) => {
   const {
-    actions: { createNode },
+    actions: { createNode, touchNode },
     cache,
     contentTypesSchemas,
     createNodeId,
+    getNode,
     store,
     strapiConfig: { apiURL },
   } = ctx;
@@ -189,9 +190,10 @@ const extractImages = async (item, ctx, uid) => {
 
     const attribute = schema.schema.attributes[attributeName];
 
-    if (attribute?.type === 'relation' && value) {
-      return extractImages(value, ctx, attribute.target);
-    }
+    // TODO maybe extract images for relations but at some point it causes issues
+    // if (attribute?.type === 'relation' && value) {
+    //   return extractImages(value, ctx, attribute.target);
+    // }
 
     if (attribute?.type === 'media' && value) {
       const isMultiple = attribute.multiple;
@@ -202,7 +204,16 @@ const extractImages = async (item, ctx, uid) => {
         imagesField.map(async (file) => {
           let fileNodeID;
 
-          // For now always download the file
+          const mediaDataCacheKey = `strapi-media-${file.id}`;
+          const cacheMediaData = await cache.get(mediaDataCacheKey);
+
+          // If we have cached media data and it wasn't modified, reuse
+          // previously created file node to not try to redownload
+          if (cacheMediaData && cacheMediaData.updatedAt === file.updatedAt) {
+            fileNodeID = cacheMediaData.fileNodeID;
+            touchNode(getNode(fileNodeID));
+          }
+
           if (!fileNodeID) {
             try {
               // full media url
@@ -217,6 +228,11 @@ const extractImages = async (item, ctx, uid) => {
 
               if (fileNode) {
                 fileNodeID = fileNode.id;
+
+                await cache.set(mediaDataCacheKey, {
+                  fileNodeID,
+                  updatedAt: file.updatedAt,
+                });
               }
             } catch (e) {
               // Ignore
@@ -231,14 +247,7 @@ const extractImages = async (item, ctx, uid) => {
       const images = files.filter((fileNodeID) => fileNodeID);
 
       if (images && images.length > 0) {
-        // item[attributeName] = isMultiple ? images : images[0];
-        // Here 2 nodes will be resolved by the same GQL field
-        // item[`${attributeName}___NODE`] = isMultiple ? images : images[0];
-
-        // Foreign key
         item[attributeName][`localFile___NODE`] = isMultiple ? images : images[0];
-        // Delete the other one
-        // delete item[attributeName];
       }
     }
   }

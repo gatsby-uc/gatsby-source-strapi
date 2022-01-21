@@ -69,11 +69,11 @@ exports.sourceNodes = async (
 
     const nodeType = `Strapi${capitalize(singularName)}`;
 
+    await downloadMediaFiles(data[i], ctx, uid);
+
     for (let entity of data[i]) {
       await Promise.all(createNodes(entity, nodeType, ctx, uid));
     }
-
-    await downloadMediaFiles(data[i], ctx, uid);
   }
 
   return;
