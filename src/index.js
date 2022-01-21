@@ -1,125 +1,80 @@
-import pluralize from 'pluralize';
-import _, { upperFirst, camelCase, capitalize } from 'lodash';
+/**
+ * Implement Gatsby's Node APIs in this file.
+ *
+ * See: https://www.gatsbyjs.com/docs/node-apis/
+ */
+// You can delete this file if you're not using it
 
-import fetchData from './fetch';
-import { Node } from './nodes';
-import normalize from './normalize';
-import authentication from './authentication';
+/**
+ * You can uncomment the following line to verify that
+ * your plugin is being loaded in your site.
+ *
+ * See: https://www.gatsbyjs.com/docs/creating-a-local-plugin/#developing-a-local-plugin-that-is-outside-your-project
+ */
+import { capitalize } from 'lodash';
+import { fetchStrapiContentTypes, fetchEntities, fetchEntity } from './fetch';
+import { getEndpoints } from './helpers';
+import { downloadMediaFiles, createNodes } from './normalize';
 
-const toTypeInfo = (type, { single = false }) => {
-  if (typeof type === 'object') {
-    return {
-      endpoint: type.endpoint || (single ? type.name : pluralize(type.name)),
-      name: type.name,
-      api: type.api,
-    };
-  }
-
-  return { endpoint: single ? type : pluralize(type), name: type };
-};
-
-const contentTypeToTypeInfo = toTypeInfo;
-const singleTypeToTypeInfo = (singleType) => toTypeInfo(singleType, { single: true });
-
-const fetchEntities = async (entityDefinition, ctx) => {
-  const entities = await fetchData(entityDefinition, ctx);
-  await normalize.downloadMediaFiles(entities, ctx);
-
-  return entities;
-};
-
-const addDynamicZoneFieldsToSchema = ({ type, items, actions, schema }) => {
-  const { createTypes } = actions;
-  // Search for dynamic zones in all items
-  const dynamicZoneFields = {};
-
-  items.forEach((item) => {
-    _.forEach(item, (value, field) => {
-      if (normalize.isDynamicZone(value)) {
-        dynamicZoneFields[field] = 'JSON';
-      }
-    });
-  });
-
-  // Cast dynamic zone fields to JSON
-  if (!_.isEmpty(dynamicZoneFields)) {
-    const typeDef = schema.buildObjectType({
-      name: `Strapi${upperFirst(camelCase(type))}`,
-      fields: dynamicZoneFields,
-      interfaces: ['Node'],
-    });
-
-    createTypes([typeDef]);
-  }
-};
+exports.onPreInit = () => console.log('Loaded gatsby-source-strapi-plugin');
 
 exports.sourceNodes = async (
-  { store, actions, cache, reporter, getNode, getNodes, createNodeId, createContentDigest, schema },
-  { apiURL = 'http://localhost:1337', loginData = {}, queryLimit = 100, ...options }
-) => {
-  const { createNode, deleteNode, touchNode } = actions;
-
-  const jwtToken = await authentication({ loginData, reporter, apiURL });
-
-  const ctx = {
+  {
+    actions,
+    createContentDigest,
+    createNodeId,
+    reporter,
+    getCache,
     store,
     cache,
+    getNodes,
     getNode,
-    createNode,
-    createNodeId,
-    queryLimit,
-    apiURL,
-    jwtToken,
-    reporter,
-    touchNode,
+  },
+  pluginOptions
+) => {
+  const contentTypesSchemas = await fetchStrapiContentTypes(pluginOptions);
+  const { touchNode } = actions;
+
+  const ctx = {
+    strapiConfig: pluginOptions,
+    actions,
+    contentTypesSchemas,
     createContentDigest,
-    schema,
+    createNodeId,
+    reporter,
+    getCache,
+    getNode,
+    getNodes,
+    store,
+    cache,
   };
 
-  // Start activity, Strapi data fetching
-  const fetchActivity = reporter.activityTimer(`Fetched Strapi Data`);
-  fetchActivity.start();
-
-  const collectionTypes = (options.collectionTypes || []).map(contentTypeToTypeInfo);
-  const singleTypes = (options.singleTypes || []).map(singleTypeToTypeInfo);
-
-  const types = [...collectionTypes, ...singleTypes];
-
-  // Execute the promises
-  const entities = await Promise.all(types.map((type) => fetchEntities(type, ctx)));
-
-  // new created nodes
-  const newNodes = [];
-
-  // Fetch existing strapi nodes
   const existingNodes = getNodes().filter((n) => n.internal.owner === `gatsby-source-strapi`);
+  existingNodes.forEach((n) => touchNode(n));
 
-  // Touch each one of them
-  existingNodes.forEach((node) => touchNode(node));
+  const endpoints = getEndpoints(pluginOptions, contentTypesSchemas);
 
-  // Merge single and collection types and retrieve create nodes
-  types.forEach(({ name }, i) => {
-    const items = entities[i];
+  const data = await Promise.all(
+    endpoints.map(({ kind, ...config }) => {
+      if (kind === 'singleType') {
+        return fetchEntity(config, ctx);
+      }
 
-    addDynamicZoneFieldsToSchema({ type: name, items, actions, schema });
+      return fetchEntities(config, ctx);
+    })
+  );
 
-    items.forEach((item) => {
-      const node = Node(capitalize(name), item);
-      // Adding new created nodes in an Array
-      newNodes.push(node);
+  for (let i = 0; i < endpoints.length; i++) {
+    const { singularName, uid } = endpoints[i];
 
-      // Create nodes
-      createNode(node);
-    });
-  });
+    const nodeType = `Strapi${capitalize(singularName)}`;
 
-  // Make a diff array between existing nodes and new ones
-  const diff = existingNodes.filter((existingNode) => {
-    return !newNodes.some((newNode) => newNode.id === existingNode.id);
-  });
+    for (let entity of data[i]) {
+      await Promise.all(createNodes(entity, nodeType, ctx, uid));
+    }
 
-  // Delete diff nodes
-  diff.forEach((node) => deleteNode(getNode(node.id)));
+    await downloadMediaFiles(data[i], ctx, uid);
+  }
 
-  fetchActivity.end();
+  return;
 };

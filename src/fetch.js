@@ -1,67 +1,203 @@
-import axios from 'axios';
-import { isObject, forEach, set, castArray, startsWith } from 'lodash';
+import { castArray, flattenDeep, pick } from 'lodash';
+import createInstance from './axiosInstance';
+import qs from 'qs';
+import { getContentTypeSchema } from './helpers';
 
-module.exports = async (entityDefinition, ctx) => {
-  const { apiURL, queryLimit, jwtToken, reporter } = ctx;
-
-  const { endpoint, api } = entityDefinition;
-
-  // Define API endpoint.
-  let apiBase = `${apiURL}/${endpoint}`;
-
-  const requestOptions = {
-    method: 'GET',
-    url: apiBase,
-    // Place global params first, so that they can be overriden by api.qs
-    params: { _limit: queryLimit, ...api?.qs },
-    headers: addAuthorizationHeader({}, jwtToken),
-  };
-
-  reporter.info(
-    `Starting to fetch data from Strapi - ${apiBase} with params ${JSON.stringify(
-      requestOptions.params
-    )}`
-  );
-
-  try {
-    const { data } = await axios(requestOptions);
-    return castArray(data).map(clean);
-  } catch (error) {
-    reporter.panic(`Failed to fetch data from Strapi`, error);
-  }
-};
+const MEDIA_FIELDS = [
+  'name',
+  'alternativeText',
+  'caption',
+  'width',
+  'height',
+  'formats',
+  'hash',
+  'ext',
+  'mime',
+  'size',
+  'url',
+  'previewUrl',
+  'provider',
+  'provider_metadata',
+  'createdAt',
+  'updatedAt',
+];
 
 /**
- * Remove fields starting with `_` symbol.
- *
- * @param {object} item - Entry needing clean
- * @returns {object} output - Object cleaned
+ * Removes the attribute key in the entire data.
+ * @param {Object} attributes response from the API
+ * @param {Object} currentSchema
+ * @param {*} allSchemas
+ * @returns
  */
-const clean = (item) => {
-  forEach(item, (value, key) => {
-    if (key === `__v`) {
-      // Remove mongo's __v
-      delete item[key];
-    } else if (key === `_id`) {
-      // Rename mongo's "_id" key to "id".
-      delete item[key];
-      item.id = value;
-    } else if (startsWith(key, '__')) {
-      // Gatsby reserves double-underscore prefixes – replace prefix with "strapi"
-      delete item[key];
-      item[`strapi_${key.slice(2)}`] = value;
-    } else if (isObject(value)) {
-      item[key] = clean(value);
-    }
-  });
-
-  return item;
-};
-
-const addAuthorizationHeader = (options, token) => {
-  if (token) {
-    set(options, 'Authorization', `Bearer ${token}`);
+const cleanAttributes = (attributes, currentSchema, allSchemas) => {
+  if (!attributes) {
+    return null;
   }
 
-  return options;
+  return Object.entries(attributes).reduce((acc, [name, value]) => {
+    const attribute = currentSchema.schema.attributes[name];
+
+    // createdAt and updatedAt are not returned by the api
+    if (!['relation', 'media'].includes(attribute?.type)) {
+      acc[name] = value;
+
+      return acc;
+    }
+
+    if (attribute.type === 'media') {
+      if (Array.isArray(value?.data)) {
+        return {
+          ...acc,
+          [name]: value.data
+            ? value.data.map(({ id, attributes }) => ({
+                id,
+                ...pick(attributes, MEDIA_FIELDS),
+              }))
+            : null,
+        };
+      }
+
+      return {
+        ...acc,
+        [name]: value.data
+          ? {
+              id: value.data.id,
+              ...pick(value.data.attributes, MEDIA_FIELDS),
+            }
+          : null,
+      };
+    }
+
+    const relationSchema = getContentTypeSchema(allSchemas, attribute.target);
+
+    if (Array.isArray(value?.data)) {
+      return {
+        ...acc,
+        [name]: value.data.map(({ id, attributes }) =>
+          cleanAttributes({ id, ...attributes }, relationSchema, allSchemas)
+        ),
+      };
+    }
+
+    return {
+      ...acc,
+      [name]: cleanAttributes(
+        value.data ? { id: value.data.id, ...value.data.attributes } : null,
+        relationSchema,
+        allSchemas
+      ),
+    };
+  }, {});
 };
+
+const cleanData = ({ id, attributes }, ctx) => {
+  const { contentTypesSchemas, contentTypeUid } = ctx;
+  const currentContentTypeSchema = getContentTypeSchema(contentTypesSchemas, contentTypeUid);
+
+  return {
+    id,
+    ...cleanAttributes(attributes, currentContentTypeSchema, contentTypesSchemas),
+  };
+};
+
+const fetchStrapiContentTypes = async (pluginOptions) => {
+  const axiosInstance = createInstance(pluginOptions);
+  const {
+    data: { data },
+  } = await axiosInstance.get('/api/content-type-builder/content-types');
+
+  return data;
+};
+
+const fetchEntity = async ({ endpoint, queryParams, uid }, ctx) => {
+  const { strapiConfig, reporter } = ctx;
+  const axiosInstance = createInstance(strapiConfig);
+
+  const opts = {
+    method: 'GET',
+    url: endpoint,
+    params: queryParams,
+    paramsSerializer: (params) => qs.stringify(params, { encodeValuesOnly: true }),
+  };
+
+  try {
+    reporter.info(`Starting to fetch data from Strapi - ${opts.url} with ${JSON.stringify(opts)}`);
+
+    const { data } = await axiosInstance(opts);
+
+    return castArray(data.data).map((entry) => cleanData(entry, { ...ctx, contentTypeUid: uid }));
+  } catch (error) {
+    // reporter.panic(
+    //   `Failed to fetch data from Strapi ${opts.url} with ${JSON.stringify(opts)}`,
+    //   error,
+    // );
+    return [];
+  }
+};
+
+const fetchEntities = async ({ endpoint, queryParams, uid }, ctx) => {
+  const { strapiConfig, reporter } = ctx;
+  const axiosInstance = createInstance(strapiConfig);
+
+  const opts = {
+    method: 'GET',
+    url: endpoint,
+    params: queryParams,
+    paramsSerializer: (params) => qs.stringify(params, { encodeValuesOnly: true }),
+  };
+
+  try {
+    reporter.info(
+      `Starting to fetch data from Strapi - ${opts.url} with ${JSON.stringify(opts.params)}`
+    );
+
+    const {
+      data: { data, meta },
+    } = await axiosInstance(opts);
+
+    const page = parseInt(meta.pagination.page);
+
+    const pagesToGet = Array.from({ length: parseInt(meta.pagination.pageCount, 10) - page }).map(
+      (_, i) => i + page + 1
+    );
+
+    const arrayOfPromises = pagesToGet.map((page) => {
+      return (async () => {
+        const options = {
+          ...opts,
+        };
+
+        options.params.pagination.page = page;
+
+        reporter.info(
+          `Starting to fetch data from Strapi - ${options.url} with ${JSON.stringify(
+            opts.paramsSerializer(opts.params)
+          )}`
+        );
+
+        try {
+          const {
+            data: { data },
+          } = await axiosInstance(options);
+
+          return data;
+        } catch (err) {
+          reporter.panic(`Failed to fetch data from Strapi ${options.url}`, err);
+        }
+      })();
+    });
+
+    const results = await Promise.all(arrayOfPromises);
+
+    const cleanedData = [...data, ...flattenDeep(results)].map((entry) =>
+      cleanData(entry, { ...ctx, contentTypeUid: uid })
+    );
+
+    return cleanedData;
+  } catch (error) {
+    reporter.panic(`Failed to fetch data from Strapi ${opts.url}`, error);
+    return [];
+  }
+};
+
+export { fetchStrapiContentTypes, fetchEntity, fetchEntities };
