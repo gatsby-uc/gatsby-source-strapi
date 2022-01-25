@@ -101,84 +101,96 @@ export const createNodes = (entity, nodeType, ctx, uid) => {
     const value = entity[attributeName];
 
     const attribute = schema.schema.attributes[attributeName];
+    const type = _.get(attribute, 'type', null);
 
-    // Create type for the first level of relations, otherwise the user should fetch the other content type
-    // to link them
-    if (attribute?.type === 'relation' && value) {
-      const config = {
-        contentTypesSchemas,
-        createNodeId,
-        parentNode: entryNode,
-        parentNodeType: nodeType,
-        attributeName,
-        targetSchemaUid: attribute.target,
-      };
+    if (value) {
+      if (type === 'dynamiczone') {
+        value.forEach((v) => {
+          const componentSchema = getContentTypeSchema(contentTypesSchemas, v.strapiComponent);
+          const componentNode = `Strapi${_.capitalize(componentSchema.schema.displayName)}`;
 
-      if (Array.isArray(value)) {
-        const relationNodes = value.map((relation) => prepareRelationNode(relation, config));
-        entity[`${attributeName}___NODE`] = relationNodes.map(({ id }) => id);
-
-        relationNodes.forEach((node) => {
-          if (!getNode(node.id)) {
-            nodes.push(createNode(node));
-          }
+          createComponentsNode(v, componentNode, ctx, v.strapiComponent);
         });
-      } else {
-        const relationNode = prepareRelationNode(value, config);
+      }
 
-        entity[`${attributeName}___NODE`] = relationNode.id;
+      if (type === 'relation') {
+        // Create type for the first level of relations, otherwise the user should fetch the other content type
+        // to link them
+        const config = {
+          contentTypesSchemas,
+          createNodeId,
+          parentNode: entryNode,
+          parentNodeType: nodeType,
+          attributeName,
+          targetSchemaUid: attribute.target,
+        };
 
-        const relationNodeToCreate = getNode(relationNode.id);
+        if (Array.isArray(value)) {
+          const relationNodes = value.map((relation) => prepareRelationNode(relation, config));
+          entity[`${attributeName}___NODE`] = relationNodes.map(({ id }) => id);
 
-        if (!relationNodeToCreate) {
-          nodes.push(createNode(relationNode));
+          relationNodes.forEach((node) => {
+            if (!getNode(node.id)) {
+              nodes.push(createNode(node));
+            }
+          });
+        } else {
+          const relationNode = prepareRelationNode(value, config);
+
+          entity[`${attributeName}___NODE`] = relationNode.id;
+
+          const relationNodeToCreate = getNode(relationNode.id);
+
+          if (!relationNodeToCreate) {
+            nodes.push(createNode(relationNode));
+          }
+        }
+        delete entity[attributeName];
+      }
+
+      // Apply transformations to components: markdown, json...
+      if (type === 'component') {
+        const componentSchema = getContentTypeSchema(contentTypesSchemas, attribute.component);
+        const componentNode = `Strapi${_.capitalize(componentSchema.schema.displayName)}`;
+
+        if (attribute.repeatable) {
+          value.forEach((v) => {
+            createComponentsNode(v, componentNode, ctx, attribute.component);
+          });
+        } else {
+          createComponentsNode(value, componentNode, ctx, attribute.component);
         }
       }
-      delete entity[attributeName];
-    }
 
-    // Apply transformations to components: markdown, json...
-    if (attribute?.type === 'component' && value) {
-      const componentSchema = getContentTypeSchema(contentTypesSchemas, attribute.component);
-      const componentNode = `Strapi${_.capitalize(componentSchema.schema.displayName)}`;
-
-      if (attribute.repeatable) {
-        value.forEach((v) => {
-          createComponentsNode(v, componentNode, ctx, attribute.component);
+      if (type === 'richtext') {
+        const textNode = prepareTextNode(value, {
+          createNodeId,
+          parentNode: entryNode,
+          attributeName,
         });
-      } else {
-        createComponentsNode(value, componentNode, ctx, attribute.component);
+
+        entryNode.children = entryNode.children.concat([textNode.id]);
+
+        entity[`${attributeName}___NODE`] = textNode.id;
+        delete entity[attributeName];
+
+        nodes.push(createNode(textNode));
       }
-    }
 
-    if (attribute?.type === 'richtext' && value) {
-      const textNode = prepareTextNode(value, {
-        createNodeId,
-        parentNode: entryNode,
-        attributeName,
-      });
+      if (type === 'json') {
+        const JSONNode = prepareJSONNode(value, {
+          createNodeId,
+          parentNode: entryNode,
+          attributeName,
+        });
 
-      entryNode.children = entryNode.children.concat([textNode.id]);
+        entryNode.children = entryNode.children.concat([JSONNode.id]);
 
-      entity[`${attributeName}___NODE`] = textNode.id;
-      delete entity[attributeName];
+        entity[`${attributeName}___NODE`] = JSONNode.id;
+        delete entity[attributeName];
 
-      nodes.push(createNode(textNode));
-    }
-
-    if (attribute?.type === 'json' && value) {
-      const JSONNode = prepareJSONNode(value, {
-        createNodeId,
-        parentNode: entryNode,
-        attributeName,
-      });
-
-      entryNode.children = entryNode.children.concat([JSONNode.id]);
-
-      entity[`${attributeName}___NODE`] = JSONNode.id;
-      delete entity[attributeName];
-
-      nodes.push(createNode(JSONNode));
+        nodes.push(createNode(JSONNode));
+      }
     }
   }
 

@@ -1,4 +1,4 @@
-import { castArray, flattenDeep, pick } from 'lodash';
+import _, { castArray, flattenDeep, pick } from 'lodash';
 import createInstance from './axiosInstance';
 import qs from 'qs';
 import { getContentTypeSchema } from './helpers';
@@ -16,11 +16,11 @@ const MEDIA_FIELDS = [
   'size',
   'url',
   'previewUrl',
-  'provider',
-  'provider_metadata',
   'createdAt',
   'updatedAt',
 ];
+
+const restrictedFields = ['__component'];
 
 /**
  * Removes the attribute key in the entire data.
@@ -37,14 +37,39 @@ const cleanAttributes = (attributes, currentSchema, allSchemas) => {
   return Object.entries(attributes).reduce((acc, [name, value]) => {
     const attribute = currentSchema.schema.attributes[name];
 
-    if (attribute?.type === 'component' && value) {
+    const attributeName = restrictedFields.includes(name) ? _.camelCase(`strapi${name}`) : name;
+
+    if (!attribute?.type) {
+      acc[attributeName] = value;
+
+      return acc;
+    }
+
+    if (!value) {
+      acc[attributeName] = value;
+
+      return acc;
+    }
+
+    if (attribute.type === 'dynamiczone') {
+      return {
+        ...acc,
+        [attributeName]: value.map((v) => {
+          const compoSchema = getContentTypeSchema(allSchemas, v.__component);
+
+          return cleanAttributes(v, compoSchema, allSchemas);
+        }),
+      };
+    }
+
+    if (attribute.type === 'component') {
       const isRepeatable = attribute.repeatable;
       const compoSchema = getContentTypeSchema(allSchemas, attribute.component);
 
       if (isRepeatable) {
         return {
           ...acc,
-          [name]: value.map((v) => {
+          [attributeName]: value.map((v) => {
             return cleanAttributes(v, compoSchema, allSchemas);
           }),
         };
@@ -52,15 +77,15 @@ const cleanAttributes = (attributes, currentSchema, allSchemas) => {
 
       return {
         ...acc,
-        [name]: cleanAttributes(value, compoSchema, allSchemas),
+        [attributeName]: cleanAttributes(value, compoSchema, allSchemas),
       };
     }
 
-    if (attribute?.type === 'media') {
+    if (attribute.type === 'media') {
       if (Array.isArray(value?.data)) {
         return {
           ...acc,
-          [name]: value.data
+          [attributeName]: value.data
             ? value.data.map(({ id, attributes }) => ({
                 id,
                 ...pick(attributes, MEDIA_FIELDS),
@@ -71,7 +96,7 @@ const cleanAttributes = (attributes, currentSchema, allSchemas) => {
 
       return {
         ...acc,
-        [name]: value.data
+        [attributeName]: value.data
           ? {
               id: value.data.id,
               ...pick(value.data.attributes, MEDIA_FIELDS),
@@ -80,13 +105,13 @@ const cleanAttributes = (attributes, currentSchema, allSchemas) => {
       };
     }
 
-    if (attribute?.type === 'relation') {
+    if (attribute.type === 'relation') {
       const relationSchema = getContentTypeSchema(allSchemas, attribute.target);
 
       if (Array.isArray(value?.data)) {
         return {
           ...acc,
-          [name]: value.data.map(({ id, attributes }) =>
+          [attributeName]: value.data.map(({ id, attributes }) =>
             cleanAttributes({ id, ...attributes }, relationSchema, allSchemas)
           ),
         };
@@ -94,7 +119,7 @@ const cleanAttributes = (attributes, currentSchema, allSchemas) => {
 
       return {
         ...acc,
-        [name]: cleanAttributes(
+        [attributeName]: cleanAttributes(
           value.data ? { id: value.data.id, ...value.data.attributes } : null,
           relationSchema,
           allSchemas
@@ -102,7 +127,7 @@ const cleanAttributes = (attributes, currentSchema, allSchemas) => {
       };
     }
 
-    acc[name] = value;
+    acc[attributeName] = value;
 
     return acc;
   }, {});
