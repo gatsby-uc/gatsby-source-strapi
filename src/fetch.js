@@ -26,10 +26,10 @@ const restrictedFields = ['__component'];
  * Removes the attribute key in the entire data.
  * @param {Object} attributes response from the API
  * @param {Object} currentSchema
- * @param {*} allSchemas
+ * @param {*} schemas
  * @returns
  */
-const cleanAttributes = (attributes, currentSchema, allSchemas) => {
+const cleanAttributes = (attributes, currentSchema, schemas) => {
   if (!attributes) {
     return null;
   }
@@ -55,29 +55,29 @@ const cleanAttributes = (attributes, currentSchema, allSchemas) => {
       return {
         ...acc,
         [attributeName]: value.map((v) => {
-          const compoSchema = getContentTypeSchema(allSchemas, v.__component);
+          const compoSchema = getContentTypeSchema(schemas, v.__component);
 
-          return cleanAttributes(v, compoSchema, allSchemas);
+          return cleanAttributes(v, compoSchema, schemas);
         }),
       };
     }
 
     if (attribute.type === 'component') {
       const isRepeatable = attribute.repeatable;
-      const compoSchema = getContentTypeSchema(allSchemas, attribute.component);
+      const compoSchema = getContentTypeSchema(schemas, attribute.component);
 
       if (isRepeatable) {
         return {
           ...acc,
           [attributeName]: value.map((v) => {
-            return cleanAttributes(v, compoSchema, allSchemas);
+            return cleanAttributes(v, compoSchema, schemas);
           }),
         };
       }
 
       return {
         ...acc,
-        [attributeName]: cleanAttributes(value, compoSchema, allSchemas),
+        [attributeName]: cleanAttributes(value, compoSchema, schemas),
       };
     }
 
@@ -106,13 +106,13 @@ const cleanAttributes = (attributes, currentSchema, allSchemas) => {
     }
 
     if (attribute.type === 'relation') {
-      const relationSchema = getContentTypeSchema(allSchemas, attribute.target);
+      const relationSchema = getContentTypeSchema(schemas, attribute.target);
 
       if (Array.isArray(value?.data)) {
         return {
           ...acc,
           [attributeName]: value.data.map(({ id, attributes }) =>
-            cleanAttributes({ id, ...attributes }, relationSchema, allSchemas)
+            cleanAttributes({ id, ...attributes }, relationSchema, schemas)
           ),
         };
       }
@@ -122,7 +122,7 @@ const cleanAttributes = (attributes, currentSchema, allSchemas) => {
         [attributeName]: cleanAttributes(
           value.data ? { id: value.data.id, ...value.data.attributes } : null,
           relationSchema,
-          allSchemas
+          schemas
         ),
       };
     }
@@ -134,12 +134,12 @@ const cleanAttributes = (attributes, currentSchema, allSchemas) => {
 };
 
 const cleanData = ({ id, attributes }, ctx) => {
-  const { contentTypesSchemas, contentTypeUid } = ctx;
-  const currentContentTypeSchema = getContentTypeSchema(contentTypesSchemas, contentTypeUid);
+  const { schemas, contentTypeUid } = ctx;
+  const currentContentTypeSchema = getContentTypeSchema(schemas, contentTypeUid);
 
   return {
     id,
-    ...cleanAttributes(attributes, currentContentTypeSchema, contentTypesSchemas),
+    ...cleanAttributes(attributes, currentContentTypeSchema, schemas),
   };
 };
 
@@ -157,7 +157,11 @@ const fetchStrapiContentTypes = async (pluginOptions) => {
     axiosInstance.get('/api/content-type-builder/components'),
   ]);
 
-  return [...contentTypes, ...components];
+  return {
+    schemas: [...contentTypes, ...components],
+    contentTypes,
+    components,
+  };
 };
 
 const fetchEntity = async ({ endpoint, queryParams, uid }, ctx) => {

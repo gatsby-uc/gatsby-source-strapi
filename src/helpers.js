@@ -1,5 +1,5 @@
-const getContentTypeSchema = (allSchemas, ctUID) => {
-  const currentContentTypeSchema = allSchemas.find(({ uid }) => uid === ctUID);
+const getContentTypeSchema = (schemas, ctUID) => {
+  const currentContentTypeSchema = schemas.find(({ uid }) => uid === ctUID);
 
   return currentContentTypeSchema;
 };

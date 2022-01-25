@@ -16,6 +16,9 @@ import { fetchStrapiContentTypes, fetchEntities, fetchEntity } from './fetch';
 import { getEndpoints } from './helpers';
 import { downloadMediaFiles, createNodes } from './normalize';
 
+const CACHE_CONTENT_TYPES = `strapi-content-types`;
+const CACHE_COMPONENTS = `strapi-components`;
+
 exports.onPreInit = () => console.log('Loaded gatsby-source-strapi-plugin');
 
 exports.sourceNodes = async (
@@ -32,13 +35,17 @@ exports.sourceNodes = async (
   },
   pluginOptions
 ) => {
-  const contentTypesSchemas = await fetchStrapiContentTypes(pluginOptions);
+  const { schemas, contentTypes, components } = await fetchStrapiContentTypes(pluginOptions);
+
+  await cache.set(CACHE_CONTENT_TYPES, contentTypes);
+  await cache.set(CACHE_COMPONENTS, components);
+
   const { touchNode } = actions;
 
   const ctx = {
     strapiConfig: pluginOptions,
     actions,
-    contentTypesSchemas,
+    schemas,
     createContentDigest,
     createNodeId,
     reporter,
@@ -52,7 +59,7 @@ exports.sourceNodes = async (
   const existingNodes = getNodes().filter((n) => n.internal.owner === `gatsby-source-strapi`);
   existingNodes.forEach((n) => touchNode(n));
 
-  const endpoints = getEndpoints(pluginOptions, contentTypesSchemas);
+  const endpoints = getEndpoints(pluginOptions, schemas);
 
   const data = await Promise.all(
     endpoints.map(({ kind, ...config }) => {
@@ -72,7 +79,9 @@ exports.sourceNodes = async (
     await downloadMediaFiles(data[i], ctx, uid);
 
     for (let entity of data[i]) {
-      await Promise.all(createNodes(entity, nodeType, ctx, uid));
+      const nodes = createNodes(entity, nodeType, ctx, uid);
+
+      await Promise.all(nodes.map((n) => actions.createNode(n)));
     }
   }
 
