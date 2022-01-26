@@ -2,6 +2,12 @@ const { createRemoteFileNode } = require(`gatsby-source-filesystem`);
 const { getContentTypeSchema } = require('./helpers');
 const _ = require('lodash');
 
+/**
+ * Create a child node for json fields
+ * @param {Object} json value
+ * @param {Object} ctx
+ * @returns {Object} gatsby node
+ */
 const prepareJSONNode = (json, ctx) => {
   const { createContentDigest, createNodeId, parentNode, attributeName } = ctx;
 
@@ -23,6 +29,12 @@ const prepareJSONNode = (json, ctx) => {
   return JSONNode;
 };
 
+/**
+ * Create a child node for relation and link the parent node to it
+ * @param {Object} relation
+ * @param {Object} ctx
+ * @returns {Object} gatsby node
+ */
 const prepareRelationNode = (relation, ctx) => {
   const { schemas, createNodeId, createContentDigest, parentNode, targetSchemaUid } = ctx;
 
@@ -48,6 +60,12 @@ const prepareRelationNode = (relation, ctx) => {
   return node;
 };
 
+/**
+ * Create a child node for markdown fields
+ * @param {String} text value
+ * @param {Object} ctx
+ * @returns {Object} gatsby node
+ */
 const prepareTextNode = (text, ctx) => {
   const { createContentDigest, createNodeId, parentNode, attributeName } = ctx;
   const textNodeId = createNodeId(`${parentNode.strapi_id}-${attributeName}-TextNode`);
@@ -68,6 +86,14 @@ const prepareTextNode = (text, ctx) => {
   return textNode;
 };
 
+/**
+ * Returns an array of the main node and children nodes to create
+ * @param {Object} entity the main entry
+ * @param {String} nodeType the name of the main node
+ * @param {Object} ctx object of gatsby functions
+ * @param {String} uid the main schema uid
+ * @returns {Object[]} array of nodes to create
+ */
 export const createNodes = (entity, nodeType, ctx, uid) => {
   const nodes = [];
 
@@ -233,6 +259,12 @@ export const createNodes = (entity, nodeType, ctx, uid) => {
   return nodes;
 };
 
+/**
+ * Extract images and create remote nodes for images in all fields.
+ * @param {Object} item the entity
+ * @param {Object} ctx gatsby function
+ * @param {String} uid the main schema uid
+ */
 const extractImages = async (item, ctx, uid) => {
   const {
     actions: { createNode, touchNode },
@@ -261,7 +293,6 @@ const extractImages = async (item, ctx, uid) => {
     // Always extract images for components
 
     if (value && type) {
-      // TODO check recursivity
       if (type === 'dynamiczone') {
         for (const element of value) {
           await extractImages(element, ctx, element.strapiComponent);
