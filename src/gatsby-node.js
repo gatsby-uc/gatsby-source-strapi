@@ -16,6 +16,8 @@ import { fetchStrapiContentTypes, fetchEntities, fetchEntity } from './fetch';
 import { buildMapFromNodes, buildNodesToRemoveMap, getEndpoints } from './helpers';
 import { downloadMediaFiles, createNodes } from './normalize';
 
+const LAST_FETCHED_KEY = 'timestamp';
+
 exports.onPreInit = () => console.log('Loaded gatsby-source-strapi-plugin');
 
 exports.sourceNodes = async (
@@ -50,17 +52,17 @@ exports.sourceNodes = async (
     cache,
   };
 
-  const existingNodes = getNodes().filter((n) => n.internal.owner === `gatsby-source-strapi`);
+  const existingNodes = getNodes().filter(
+    (n) => n.internal.owner === `gatsby-source-strapi` || n.internal.type === 'File'
+  );
 
   existingNodes.forEach((n) => touchNode(n));
 
   const endpoints = getEndpoints(pluginOptions, schemas);
 
-  // TODO caching
-  // This works great to retrieve all the deleted entities but maybe we should request the api
-  // another time to get the updated entries.
-  // Though we might have an issue when a relation is updated...
-  const data = await Promise.all(
+  const lastFetched = await cache.get(LAST_FETCHED_KEY);
+
+  const allResults = await Promise.all(
     endpoints.map(({ kind, ...config }) => {
       if (kind === 'singleType') {
         return fetchEntity(config, ctx);
@@ -69,6 +71,36 @@ exports.sourceNodes = async (
       return fetchEntities(config, ctx);
     })
   );
+
+  let newOrExistingEntries;
+
+  // Fetch only the updated data between run
+  if (lastFetched) {
+    const deltaEndpoints = endpoints.map((endpoint) => {
+      return {
+        ...endpoint,
+        queryParams: {
+          ...endpoint.queryParams,
+          // TODO
+          filters: {
+            updatedAt: { $gt: lastFetched },
+          },
+        },
+      };
+    });
+
+    newOrExistingEntries = await Promise.all(
+      deltaEndpoints.map(({ kind, ...config }) => {
+        if (kind === 'singleType') {
+          return fetchEntity(config, ctx);
+        }
+
+        return fetchEntities(config, ctx);
+      })
+    );
+  }
+
+  const data = newOrExistingEntries || allResults;
 
   // Build a map of all nodes with the gatsby id and the strapi_id
   const existingNodesMap = buildMapFromNodes(existingNodes);
@@ -79,7 +111,7 @@ exports.sourceNodes = async (
   // as the relation nodes will never be deleted
   // it's best to fetch the content type and its relations separately and to populate
   // only one level of relation
-  const nodesToRemoveMap = buildNodesToRemoveMap(existingNodesMap, endpoints, data);
+  const nodesToRemoveMap = buildNodesToRemoveMap(existingNodesMap, endpoints, allResults);
 
   // Delete all nodes that should be deleted
   Object.entries(nodesToRemoveMap).forEach(([nodeName, nodesToDelete]) => {
@@ -108,4 +140,8 @@ exports.sourceNodes = async (
   }
 
   return;
+};
+
+exports.onPostBuild = async ({ cache }) => {
+  await cache.set(LAST_FETCHED_KEY, Date.now());
 };
