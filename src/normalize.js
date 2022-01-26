@@ -3,7 +3,7 @@ const { getContentTypeSchema } = require('./helpers');
 const _ = require('lodash');
 
 const prepareJSONNode = (json, ctx) => {
-  const { createNodeId, parentNode, attributeName } = ctx;
+  const { createContentDigest, createNodeId, parentNode, attributeName } = ctx;
 
   const jsonNodeId = createNodeId(`${parentNode.strapi_id}-${attributeName}-JSONNode`);
 
@@ -16,7 +16,7 @@ const prepareJSONNode = (json, ctx) => {
       type: _.camelCase(`${parentNode.internal.type}-${attributeName}-JSONNode`),
       mediaType: `application/json`,
       content: JSON.stringify(json),
-      contentDigest: parentNode.updatedAt || new Date().toISOString(),
+      contentDigest: createContentDigest(json),
     },
   };
 
@@ -24,7 +24,7 @@ const prepareJSONNode = (json, ctx) => {
 };
 
 const prepareRelationNode = (relation, ctx) => {
-  const { schemas, createNodeId, parentNode, targetSchemaUid } = ctx;
+  const { schemas, createNodeId, createContentDigest, parentNode, targetSchemaUid } = ctx;
 
   const targetSchema = getContentTypeSchema(schemas, targetSchemaUid);
   const {
@@ -41,7 +41,7 @@ const prepareRelationNode = (relation, ctx) => {
     internal: {
       type: `Strapi${_.capitalize(singularName)}`,
       content: JSON.stringify(relation),
-      contentDigest: relation.updatedAt || parentNode.updatedAt || new Date().toISOString(),
+      contentDigest: createContentDigest(relation),
     },
   };
 
@@ -49,7 +49,7 @@ const prepareRelationNode = (relation, ctx) => {
 };
 
 const prepareTextNode = (text, ctx) => {
-  const { createNodeId, parentNode, attributeName } = ctx;
+  const { createContentDigest, createNodeId, parentNode, attributeName } = ctx;
   const textNodeId = createNodeId(`${parentNode.strapi_id}-${attributeName}-TextNode`);
 
   const textNode = {
@@ -61,7 +61,7 @@ const prepareTextNode = (text, ctx) => {
       type: _.camelCase(`${parentNode.internal.type}-${attributeName}-TextNode`),
       mediaType: `text/markdown`,
       content: text,
-      contentDigest: parentNode.updatedAt || new Date().toISOString(),
+      contentDigest: createContentDigest(text),
     },
   };
 
@@ -123,6 +123,7 @@ export const createNodes = (entity, nodeType, ctx, uid) => {
         // to link them
         const config = {
           schemas,
+          createContentDigest,
           createNodeId,
           parentNode: entryNode,
           parentNodeType: nodeType,
@@ -188,6 +189,7 @@ export const createNodes = (entity, nodeType, ctx, uid) => {
       // Create nodes for richtext in order to make the markdown-remark plugin works
       if (type === 'richtext') {
         const textNode = prepareTextNode(value, {
+          createContentDigest,
           createNodeId,
           parentNode: entryNode,
           attributeName,
@@ -205,6 +207,7 @@ export const createNodes = (entity, nodeType, ctx, uid) => {
       // We can remove this if not pertinent
       if (type === 'json') {
         const JSONNode = prepareJSONNode(value, {
+          createContentDigest,
           createNodeId,
           parentNode: entryNode,
           attributeName,
@@ -230,7 +233,6 @@ export const createNodes = (entity, nodeType, ctx, uid) => {
   return nodes;
 };
 
-// TODO extract images for  DZ
 const extractImages = async (item, ctx, uid) => {
   const {
     actions: { createNode, touchNode },

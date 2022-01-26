@@ -16,9 +16,6 @@ import { fetchStrapiContentTypes, fetchEntities, fetchEntity } from './fetch';
 import { buildMapFromNodes, buildNodesToRemoveMap, getEndpoints } from './helpers';
 import { downloadMediaFiles, createNodes } from './normalize';
 
-const CACHE_CONTENT_TYPES = `strapi-content-types`;
-const CACHE_COMPONENTS = `strapi-components`;
-
 exports.onPreInit = () => console.log('Loaded gatsby-source-strapi-plugin');
 
 exports.sourceNodes = async (
@@ -35,10 +32,7 @@ exports.sourceNodes = async (
   },
   pluginOptions
 ) => {
-  const { schemas, contentTypes, components } = await fetchStrapiContentTypes(pluginOptions);
-
-  await cache.set(CACHE_CONTENT_TYPES, contentTypes);
-  await cache.set(CACHE_COMPONENTS, components);
+  const { schemas } = await fetchStrapiContentTypes(pluginOptions);
 
   const { deleteNode, touchNode } = actions;
 
