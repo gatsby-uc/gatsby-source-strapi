@@ -37,7 +37,7 @@ const cleanAttributes = (attributes, currentSchema, schemas) => {
   return Object.entries(attributes).reduce((acc, [name, value]) => {
     const attribute = currentSchema.schema.attributes[name];
 
-    const attributeName = restrictedFields.includes(name) ? _.camelCase(`strapi${name}`) : name;
+    const attributeName = restrictedFields.includes(name) ? _.snakeCase(`strapi_${name}`) : name;
 
     if (!attribute?.type) {
       acc[attributeName] = value;

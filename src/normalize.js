@@ -1,5 +1,5 @@
 const { createRemoteFileNode } = require(`gatsby-source-filesystem`);
-const { getContentTypeSchema } = require('./helpers');
+const { getContentTypeSchema, makeParentNodeName } = require('./helpers');
 const _ = require('lodash');
 
 /**
@@ -19,7 +19,7 @@ const prepareJSONNode = (json, ctx) => {
     parent: parentNode.id,
     children: [],
     internal: {
-      type: _.camelCase(`${parentNode.internal.type}-${attributeName}-JSONNode`),
+      type: _.toUpper(`${parentNode.internal.type}_${attributeName}_JSONNode`),
       mediaType: `application/json`,
       content: JSON.stringify(json),
       contentDigest: createContentDigest(json),
@@ -38,12 +38,14 @@ const prepareJSONNode = (json, ctx) => {
 const prepareRelationNode = (relation, ctx) => {
   const { schemas, createNodeId, createContentDigest, parentNode, targetSchemaUid } = ctx;
 
-  const targetSchema = getContentTypeSchema(schemas, targetSchemaUid);
-  const {
-    schema: { singularName },
-  } = targetSchema;
+  // const targetSchema = getContentTypeSchema(schemas, targetSchemaUid);
+  // const {
+  //   schema: { singularName },
+  // } = targetSchema;
 
-  const relationNodeId = createNodeId(`Strapi${_.capitalize(singularName)}-${relation.id}`);
+  const nodeType = makeParentNodeName(schemas, targetSchemaUid);
+  const relationNodeId = createNodeId(`${nodeType}-${relation.id}`);
+
   const node = {
     ...relation,
     id: relationNodeId,
@@ -51,7 +53,7 @@ const prepareRelationNode = (relation, ctx) => {
     parent: parentNode.id,
     children: [],
     internal: {
-      type: `Strapi${_.capitalize(singularName)}`,
+      type: nodeType,
       content: JSON.stringify(relation),
       contentDigest: createContentDigest(relation),
     },
@@ -76,7 +78,7 @@ const prepareTextNode = (text, ctx) => {
     children: [],
     [attributeName]: text,
     internal: {
-      type: _.camelCase(`${parentNode.internal.type}-${attributeName}-TextNode`),
+      type: _.toUpper(`${parentNode.internal.type}_${attributeName}_TextNode`),
       mediaType: `text/markdown`,
       content: text,
       contentDigest: createContentDigest(text),
@@ -94,10 +96,11 @@ const prepareTextNode = (text, ctx) => {
  * @param {String} uid the main schema uid
  * @returns {Object[]} array of nodes to create
  */
-export const createNodes = (entity, nodeType, ctx, uid) => {
+export const createNodes = (entity, ctx, uid) => {
   const nodes = [];
 
   const { schemas, createNodeId, createContentDigest, getNode } = ctx;
+  const nodeType = makeParentNodeName(schemas, uid);
 
   let entryNode = {
     id: createNodeId(`${nodeType}-${entity.id}`),
@@ -123,12 +126,11 @@ export const createNodes = (entity, nodeType, ctx, uid) => {
       // Add support for dynamic zones
       if (type === 'dynamiczone') {
         value.forEach((v) => {
-          const componentSchema = getContentTypeSchema(schemas, v.strapiComponent);
-          const componentNode = `StrapiComponent${_.upperFirst(_.camelCase(componentSchema.uid))}`;
+          const componentNodeName = makeParentNodeName(schemas, v.strapi_component);
 
-          const valueNodes = _.flatten(createNodes(v, componentNode, ctx, v.strapiComponent));
+          const valueNodes = _.flatten(createNodes(v, ctx, v.strapi_component));
           const compoNodeIds = valueNodes
-            .filter(({ internal }) => internal.type === componentNode)
+            .filter(({ internal }) => internal.type === componentNodeName)
             .map(({ id }) => id);
 
           entity[`${attributeName}___NODE`] = [
@@ -152,7 +154,6 @@ export const createNodes = (entity, nodeType, ctx, uid) => {
           createContentDigest,
           createNodeId,
           parentNode: entryNode,
-          parentNodeType: nodeType,
           attributeName,
           targetSchemaUid: attribute.target,
         };
@@ -183,25 +184,23 @@ export const createNodes = (entity, nodeType, ctx, uid) => {
       // Apply transformations to components: markdown, json...
       if (type === 'component') {
         const componentSchema = getContentTypeSchema(schemas, attribute.component);
-        const componentNode = `StrapiComponent${_.upperFirst(_.camelCase(componentSchema.uid))}`;
+        const componentNodeName = makeParentNodeName(schemas, componentSchema.uid);
 
         if (attribute.repeatable) {
-          const compoNodes = _.flatten(
-            value.map((v) => createNodes(v, componentNode, ctx, attribute.component))
-          );
+          const compoNodes = _.flatten(value.map((v) => createNodes(v, ctx, attribute.component)));
 
           entity[`${attributeName}___NODE`] = compoNodes
-            .filter(({ internal }) => internal.type === componentNode)
+            .filter(({ internal }) => internal.type === componentNodeName)
             .map(({ id }) => id);
 
           compoNodes.forEach((node) => {
             nodes.push(node);
           });
         } else {
-          const compoNodes = _.flatten(createNodes(value, componentNode, ctx, attribute.component));
+          const compoNodes = _.flatten(createNodes(value, ctx, attribute.component));
 
           entity[`${attributeName}___NODE`] = compoNodes.filter(
-            ({ internal }) => internal.type === componentNode
+            ({ internal }) => internal.type === componentNodeName
           )[0].id;
 
           compoNodes.forEach((node) => {
@@ -295,7 +294,7 @@ const extractImages = async (item, ctx, uid) => {
     if (value && type) {
       if (type === 'dynamiczone') {
         for (const element of value) {
-          await extractImages(element, ctx, element.strapiComponent);
+          await extractImages(element, ctx, element.strapi_component);
         }
       }
 

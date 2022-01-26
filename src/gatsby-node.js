@@ -11,7 +11,7 @@
  *
  * See: https://www.gatsbyjs.com/docs/creating-a-local-plugin/#developing-a-local-plugin-that-is-outside-your-project
  */
-import _ from 'lodash';
+
 import { fetchStrapiContentTypes, fetchEntities, fetchEntity } from './fetch';
 import { buildMapFromNodes, buildNodesToRemoveMap, getEndpoints } from './helpers';
 import { downloadMediaFiles, createNodes } from './normalize';
@@ -73,8 +73,12 @@ exports.sourceNodes = async (
   // Build a map of all nodes with the gatsby id and the strapi_id
   const existingNodesMap = buildMapFromNodes(existingNodes);
 
-  // Build a map of all nodes that should be removed
+  // Build a map of all the parent nodes that should be removed
   // This should also delete all the created nodes for markdown, relations, dz...
+  // When fetching only one content type and populating its relations it might cause some issues
+  // as the relation nodes will never be deleted
+  // it's best to fetch the content type and its relations separately and to populate
+  // only one level of relation
   const nodesToRemoveMap = buildNodesToRemoveMap(existingNodesMap, endpoints, data);
 
   // Delete all nodes that should be deleted
@@ -92,14 +96,12 @@ exports.sourceNodes = async (
   });
 
   for (let i = 0; i < endpoints.length; i++) {
-    const { singularName, uid } = endpoints[i];
-
-    const nodeType = `Strapi${_.capitalize(singularName)}`;
+    const { uid } = endpoints[i];
 
     await downloadMediaFiles(data[i], ctx, uid);
 
     for (let entity of data[i]) {
-      const nodes = createNodes(entity, nodeType, ctx, uid);
+      const nodes = createNodes(entity, ctx, uid);
 
       await Promise.all(nodes.map((n) => actions.createNode(n)));
     }

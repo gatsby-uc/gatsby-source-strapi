@@ -3,18 +3,32 @@ import _ from 'lodash';
 const buildMapFromNodes = (nodes) => {
   return nodes.reduce((acc, current) => {
     const { internal, strapi_id, id } = current;
+    const type = internal?.type;
 
-    if (internal?.type && strapi_id && id) {
-      if (acc[internal.type]) {
-        acc[internal.type] = [
-          ...acc[internal.type],
+    // We only delete the parent nodes
+    if (type.includes('STRAPI__COMPONENT_')) {
+      return acc;
+    }
+
+    if (type.includes('_JSONNODE')) {
+      return acc;
+    }
+
+    if (type.includes('_TEXTNODE')) {
+      return acc;
+    }
+
+    if (type && id && strapi_id) {
+      if (acc[type]) {
+        acc[type] = [
+          ...acc[type],
           {
             strapi_id,
             id,
           },
         ];
       } else {
-        acc[internal.type] = [
+        acc[type] = [
           {
             strapi_id,
             id,
@@ -33,7 +47,7 @@ const buildMapFromData = (endpoints, data) => {
   for (let i = 0; i < endpoints.length; i++) {
     const { singularName } = endpoints[i];
 
-    const nodeType = `Strapi${_.capitalize(singularName)}`;
+    const nodeType = _.toUpper(`Strapi_${_.snakeCase(singularName)}`);
 
     for (let entity of data[i]) {
       if (map[nodeType]) {
@@ -51,7 +65,13 @@ const buildNodesToRemoveMap = (existingNodesMap, endpoints, data) => {
   const newNodes = buildMapFromData(endpoints, data);
 
   const toRemoveMap = Object.entries(existingNodesMap).reduce((acc, [name, value]) => {
-    const currentNodes = newNodes[name] || [];
+    const currentNodes = newNodes[name];
+
+    // Since we create nodes for relations when fetching the api
+    // We only to delete nodes that are actually being fetched
+    if (!currentNodes) {
+      return acc;
+    }
 
     acc[name] = value.filter((j) => {
       return currentNodes.findIndex((k) => k.strapi_id === j.strapi_id) === -1;
@@ -113,10 +133,28 @@ const getEndpoints = ({ collectionTypes, singleTypes }, schemas) => {
   return endpoints;
 };
 
+const makeParentNodeName = (schemas, uid) => {
+  const schema = getContentTypeSchema(schemas, uid);
+  const {
+    schema: { singularName, kind },
+  } = schema;
+
+  let nodeName = `Strapi_${_.snakeCase(singularName)}`;
+
+  const isComponentType = !['collectionType', 'singleType'].includes(kind);
+
+  if (isComponentType) {
+    nodeName = `Strapi__Component_${_.snakeCase(_.replace(uid, '.', '_'))}`;
+  }
+
+  return _.toUpper(nodeName);
+};
+
 export {
   buildMapFromNodes,
   buildMapFromData,
   buildNodesToRemoveMap,
   getContentTypeSchema,
   getEndpoints,
+  makeParentNodeName,
 };
