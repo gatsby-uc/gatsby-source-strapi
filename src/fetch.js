@@ -51,6 +51,18 @@ const cleanAttributes = (attributes, currentSchema, schemas) => {
       return acc;
     }
 
+    // Changing the format in order to extract images from the richtext field
+    // NOTE: We could add an option to disable the extraction
+    if (attribute.type === 'richtext') {
+      return {
+        ...acc,
+        [attributeName]: {
+          [attributeName]: value,
+          localFiles: [],
+        },
+      };
+    }
+
     if (attribute.type === 'dynamiczone') {
       return {
         ...acc,
