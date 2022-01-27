@@ -285,12 +285,64 @@ const extractFiles = (text, apiURL) => {
       }
 
       if (destination) {
-        files.push({ url: destination, mdUrl: node.destination, alternativeText });
+        files.push({ url: destination, src: node.destination, alternativeText });
       }
     }
   }
 
   return files.filter(Boolean);
+};
+
+const downloadFile = async (file, ctx) => {
+  const {
+    actions: { createNode, touchNode },
+    cache,
+    createNodeId,
+    getNode,
+    store,
+    strapiConfig,
+  } = ctx;
+  const { apiURL } = strapiConfig;
+
+  let fileNodeID;
+
+  const mediaDataCacheKey = `strapi-media-${file.id}`;
+  const cacheMediaData = await cache.get(mediaDataCacheKey);
+
+  // If we have cached media data and it wasn't modified, reuse
+  // previously created file node to not try to redownload
+  if (cacheMediaData && cacheMediaData.updatedAt === file.updatedAt) {
+    fileNodeID = cacheMediaData.fileNodeID;
+    touchNode(getNode(fileNodeID));
+  }
+
+  if (!fileNodeID) {
+    try {
+      // full media url
+      const source_url = `${file.url.startsWith('http') ? '' : apiURL}${file.url}`;
+      const fileNode = await createRemoteFileNode({
+        url: source_url,
+        store,
+        cache,
+        createNode,
+        createNodeId,
+      });
+
+      if (fileNode) {
+        fileNodeID = fileNode.id;
+
+        await cache.set(mediaDataCacheKey, {
+          fileNodeID,
+          updatedAt: file.updatedAt,
+        });
+      }
+    } catch (e) {
+      // Ignore
+      console.log('err', e);
+    }
+  }
+
+  return fileNodeID;
 };
 
 /**
@@ -300,15 +352,7 @@ const extractFiles = (text, apiURL) => {
  * @param {String} uid the main schema uid
  */
 const extractImages = async (item, ctx, uid) => {
-  const {
-    actions: { createNode, touchNode },
-    cache,
-    schemas,
-    createNodeId,
-    getNode,
-    store,
-    strapiConfig,
-  } = ctx;
+  const { schemas, strapiConfig } = ctx;
   const axiosInstance = createInstance(strapiConfig);
   const schema = getContentTypeSchema(schemas, uid);
   const { apiURL } = strapiConfig;
@@ -331,8 +375,6 @@ const extractImages = async (item, ctx, uid) => {
 
         const files = await Promise.all(
           extractedFiles.map(async ({ url }) => {
-            let fileNodeID;
-
             const filters = qs.stringify(
               {
                 filters: { url: url.replace(`${apiURL}`, '') },
@@ -347,32 +389,7 @@ const extractImages = async (item, ctx, uid) => {
               return null;
             }
 
-            const mediaDataCacheKey = `strapi-media-${file.id}`;
-            const cacheMediaData = await cache.get(mediaDataCacheKey);
-
-            if (cacheMediaData && cacheMediaData.updatedAt === file.updatedAt) {
-              fileNodeID = cacheMediaData.fileNodeID;
-              touchNode(getNode(fileNodeID));
-            }
-
-            if (!fileNodeID) {
-              try {
-                const fileNode = await createRemoteFileNode({
-                  url,
-                  store,
-                  cache,
-                  createNode,
-                  createNodeId,
-                });
-
-                if (fileNode) {
-                  fileNodeID = fileNode.id;
-                }
-              } catch (e) {
-                // Ignore
-                console.log('error', e);
-              }
-            }
+            const fileNodeID = await downloadFile(file, ctx);
 
             return fileNodeID;
           })
@@ -381,15 +398,12 @@ const extractImages = async (item, ctx, uid) => {
         const nodeIds = files.filter(Boolean);
 
         for (let i = 0; i < nodeIds.length; i++) {
-          item[attributeName][`localFiles`] = [
-            ...item[attributeName][`localFiles`],
-            {
-              alternativeText: extractedFiles[i].alternativeText,
-              url: extractedFiles[i].url,
-              mdUrl: extractedFiles[i].mdUrl,
-              localFile___NODE: nodeIds[i],
-            },
-          ];
+          item[attributeName][`localFiles`].push({
+            alternativeText: extractedFiles[i].alternativeText,
+            url: extractedFiles[i].url,
+            src: extractedFiles[i].src,
+            localFile___NODE: nodeIds[i],
+          });
         }
       }
 
@@ -416,43 +430,7 @@ const extractImages = async (item, ctx, uid) => {
         // Dowload all files
         const files = await Promise.all(
           imagesField.map(async (file) => {
-            let fileNodeID;
-
-            const mediaDataCacheKey = `strapi-media-${file.id}`;
-            const cacheMediaData = await cache.get(mediaDataCacheKey);
-
-            // If we have cached media data and it wasn't modified, reuse
-            // previously created file node to not try to redownload
-            if (cacheMediaData && cacheMediaData.updatedAt === file.updatedAt) {
-              fileNodeID = cacheMediaData.fileNodeID;
-              touchNode(getNode(fileNodeID));
-            }
-
-            if (!fileNodeID) {
-              try {
-                // full media url
-                const source_url = `${file.url.startsWith('http') ? '' : apiURL}${file.url}`;
-                const fileNode = await createRemoteFileNode({
-                  url: source_url,
-                  store,
-                  cache,
-                  createNode,
-                  createNodeId,
-                });
-
-                if (fileNode) {
-                  fileNodeID = fileNode.id;
-
-                  await cache.set(mediaDataCacheKey, {
-                    fileNodeID,
-                    updatedAt: file.updatedAt,
-                  });
-                }
-              } catch (e) {
-                // Ignore
-                console.log('err', e);
-              }
-            }
+            const fileNodeID = await downloadFile(file, ctx);
 
             return fileNodeID;
           })
