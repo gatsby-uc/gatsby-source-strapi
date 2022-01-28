@@ -63,6 +63,9 @@ plugins: [
 ```
 
 Setup the environment variables:
+
+> Make sure to create a full-access API TOKEN
+
 `// .env`
 
 ```

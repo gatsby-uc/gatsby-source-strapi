@@ -13,8 +13,9 @@
  */
 
 import { fetchStrapiContentTypes, fetchEntities, fetchEntity } from './fetch';
+import { downloadMediaFiles } from './download-media-files';
 import { buildMapFromNodes, buildNodesToRemoveMap, getEndpoints } from './helpers';
-import { downloadMediaFiles, createNodes } from './normalize';
+import { createNodes } from './normalize';
 
 const LAST_FETCHED_KEY = 'timestamp';
 
@@ -76,6 +77,7 @@ exports.sourceNodes = async (
 
   // Fetch only the updated data between run
   if (lastFetched) {
+    // Add the updatedAt filter
     const deltaEndpoints = endpoints.map((endpoint) => {
       return {
         ...endpoint,
