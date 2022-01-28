@@ -36,15 +36,9 @@ const strapiConfig = {
     },
     {
       singularName: 'company',
-      queryParams: {
-        populate: '*',
-      },
     },
     {
       singularName: 'author',
-      queryParams: {
-        populate: '*',
-      },
     },
   ],
   singleTypes: [
@@ -66,6 +60,14 @@ plugins: [
     options: strapiConfig,
   },
 ];
+```
+
+Setup the environment variables:
+`// .env`
+
+```
+STRAPI_TOKEN=<my-token>
+STRAPI_API_URL=http://localhost:1337
 ```
 
 ### Advanced usage
@@ -114,8 +116,6 @@ Strapi now supports [Draft and publish](https://strapi.io/documentation/develope
 
 But you may want to fetch unpublished content in Gatsby as well. To do so, find a content type that has draft & publish enabled, and add an entity definition object to your config. Then, use the query string option to specify the [publication state](https://strapi.io/documentation/developer-docs/latest/developer-resources/content-api/content-api.html#publication-state) API parameter.
 
-##### TODO
-
 ## Querying data
 
 You can query Document nodes created from your Strapi API like the following:
@@ -137,30 +137,28 @@ You can query Document nodes created from your Strapi API like the following:
       categories {
         name
       }
+      # Richtext field
       content {
-        childMarkdownRemark {
-          html
+        data {
+          childMarkdownRemark {
+            html
+          }
         }
-      }
-    }
-  }
-}
-```
-
-##### TODO
-
-You can query Document nodes in a chosen language
-
-Make sure to add `api.qs._locale` to your strapi configuration in `gatsby-config.js` (see example above)
-
-```graphql
-{
-  allStrapiArticle(filter: { locale: { eq: "en" } }) {
-    edges {
-      node {
-        id
-        title
-        content
+        # Extracted files from the richtext field
+        medias {
+          localFile {
+            childImageSharp {
+              gatsbyImageData
+            }
+          }
+          alternativeText
+          # Original url in the markdown
+          src
+          # Prefixed url
+          url
+          # Original media from the media library
+          file
+        }
       }
     }
   }

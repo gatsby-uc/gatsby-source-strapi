@@ -1,6 +1,11 @@
-const { createRemoteFileNode } = require(`gatsby-source-filesystem`);
-const { getContentTypeSchema, makeParentNodeName } = require('./helpers');
-const _ = require('lodash');
+import { createRemoteFileNode } from 'gatsby-source-filesystem';
+import _ from 'lodash';
+import { Parser } from 'commonmark';
+import qs from 'qs';
+import createInstance from './axiosInstance';
+import { getContentTypeSchema, makeParentNodeName } from './helpers';
+
+const reader = new Parser();
 
 /**
  * Create a child node for json fields
@@ -11,7 +16,9 @@ const _ = require('lodash');
 const prepareJSONNode = (json, ctx) => {
   const { createContentDigest, createNodeId, parentNode, attributeName } = ctx;
 
-  const jsonNodeId = createNodeId(`${parentNode.strapi_id}-${attributeName}-JSONNode`);
+  const jsonNodeId = createNodeId(
+    `${parentNode.strapi_id}-${parentNode.internal.type}-${attributeName}-JSONNode`
+  );
 
   const JSONNode = {
     ...(_.isPlainObject(json) ? { ...json } : { strapi_json_value: json }),
@@ -70,7 +77,9 @@ const prepareRelationNode = (relation, ctx) => {
  */
 const prepareTextNode = (text, ctx) => {
   const { createContentDigest, createNodeId, parentNode, attributeName } = ctx;
-  const textNodeId = createNodeId(`${parentNode.strapi_id}-${attributeName}-TextNode`);
+  const textNodeId = createNodeId(
+    `${parentNode.strapi_id}-${parentNode.internal.type}-${attributeName}-TextNode`
+  );
 
   const textNode = {
     id: textNodeId,
@@ -213,7 +222,7 @@ export const createNodes = (entity, ctx, uid) => {
 
       // Create nodes for richtext in order to make the markdown-remark plugin works
       if (type === 'richtext') {
-        const textNode = prepareTextNode(value, {
+        const textNode = prepareTextNode(value.data, {
           createContentDigest,
           createNodeId,
           parentNode: entryNode,
@@ -222,8 +231,9 @@ export const createNodes = (entity, ctx, uid) => {
 
         entryNode.children = entryNode.children.concat([textNode.id]);
 
-        entity[`${attributeName}___NODE`] = textNode.id;
-        delete entity[attributeName];
+        entity[attributeName][`data___NODE`] = textNode.id;
+
+        delete entity[attributeName].data;
 
         nodes.push(textNode);
       }
@@ -258,6 +268,87 @@ export const createNodes = (entity, ctx, uid) => {
   return nodes;
 };
 
+const extractFiles = (text, apiURL) => {
+  const files = [];
+  // parse the markdown content
+  const parsed = reader.parse(text);
+  const walker = parsed.walker();
+  let event, node;
+
+  while ((event = walker.next())) {
+    node = event.node;
+    // process image nodes
+    if (event.entering && node.type === 'image') {
+      let destination;
+      const alternativeText = node.firstChild?.literal || '';
+
+      if (/^\//.test(node.destination)) {
+        destination = `${apiURL}${node.destination}`;
+      } else if (/^http/i.test(node.destination)) {
+        destination = node.destination;
+      }
+
+      if (destination) {
+        files.push({ url: destination, src: node.destination, alternativeText });
+      }
+    }
+  }
+
+  return files.filter(Boolean);
+};
+
+const downloadFile = async (file, ctx) => {
+  const {
+    actions: { createNode, touchNode },
+    cache,
+    createNodeId,
+    getNode,
+    store,
+    strapiConfig,
+  } = ctx;
+  const { apiURL } = strapiConfig;
+
+  let fileNodeID;
+
+  const mediaDataCacheKey = `strapi-media-${file.id}`;
+  const cacheMediaData = await cache.get(mediaDataCacheKey);
+
+  // If we have cached media data and it wasn't modified, reuse
+  // previously created file node to not try to redownload
+  if (cacheMediaData && cacheMediaData.updatedAt === file.updatedAt) {
+    fileNodeID = cacheMediaData.fileNodeID;
+    touchNode(getNode(fileNodeID));
+  }
+
+  if (!fileNodeID) {
+    try {
+      // full media url
+      const source_url = `${file.url.startsWith('http') ? '' : apiURL}${file.url}`;
+      const fileNode = await createRemoteFileNode({
+        url: source_url,
+        store,
+        cache,
+        createNode,
+        createNodeId,
+      });
+
+      if (fileNode) {
+        fileNodeID = fileNode.id;
+
+        await cache.set(mediaDataCacheKey, {
+          fileNodeID,
+          updatedAt: file.updatedAt,
+        });
+      }
+    } catch (e) {
+      // Ignore
+      console.log('err', e);
+    }
+  }
+
+  return fileNodeID;
+};
+
 /**
  * Extract images and create remote nodes for images in all fields.
  * @param {Object} item the entity
@@ -265,17 +356,10 @@ export const createNodes = (entity, ctx, uid) => {
  * @param {String} uid the main schema uid
  */
 const extractImages = async (item, ctx, uid) => {
-  const {
-    actions: { createNode, touchNode },
-    cache,
-    schemas,
-    createNodeId,
-    getNode,
-    store,
-    strapiConfig: { apiURL },
-  } = ctx;
-
+  const { schemas, strapiConfig } = ctx;
+  const axiosInstance = createInstance(strapiConfig);
   const schema = getContentTypeSchema(schemas, uid);
+  const { apiURL } = strapiConfig;
 
   for (const attributeName of Object.keys(item)) {
     const value = item[attributeName];
@@ -289,9 +373,45 @@ const extractImages = async (item, ctx, uid) => {
     //   return extractImages(value, ctx, attribute.target);
     // }
 
-    // Always extract images for components
-
     if (value && type) {
+      if (type === 'richtext') {
+        const extractedFiles = extractFiles(value.data, apiURL);
+
+        const files = await Promise.all(
+          extractedFiles.map(async ({ url }) => {
+            const filters = qs.stringify(
+              {
+                filters: { url: url.replace(`${apiURL}`, '') },
+              },
+              { encode: false }
+            );
+
+            const { data } = await axiosInstance.get(`/api/upload/files?${filters}`);
+            const file = data[0];
+
+            if (!file) {
+              return null;
+            }
+
+            const fileNodeID = await downloadFile(file, ctx);
+
+            return { fileNodeID, file };
+          })
+        );
+
+        const fileNodes = files.filter(Boolean);
+
+        for (let i = 0; i < fileNodes.length; i++) {
+          item[attributeName].medias.push({
+            alternativeText: extractedFiles[i].alternativeText,
+            url: extractedFiles[i].url,
+            src: extractedFiles[i].src,
+            localFile___NODE: fileNodes[i].fileNodeID,
+            file: fileNodes[i].file,
+          });
+        }
+      }
+
       if (type === 'dynamiczone') {
         for (const element of value) {
           await extractImages(element, ctx, element.strapi_component);
@@ -315,43 +435,7 @@ const extractImages = async (item, ctx, uid) => {
         // Dowload all files
         const files = await Promise.all(
           imagesField.map(async (file) => {
-            let fileNodeID;
-
-            const mediaDataCacheKey = `strapi-media-${file.id}`;
-            const cacheMediaData = await cache.get(mediaDataCacheKey);
-
-            // If we have cached media data and it wasn't modified, reuse
-            // previously created file node to not try to redownload
-            if (cacheMediaData && cacheMediaData.updatedAt === file.updatedAt) {
-              fileNodeID = cacheMediaData.fileNodeID;
-              touchNode(getNode(fileNodeID));
-            }
-
-            if (!fileNodeID) {
-              try {
-                // full media url
-                const source_url = `${file.url.startsWith('http') ? '' : apiURL}${file.url}`;
-                const fileNode = await createRemoteFileNode({
-                  url: source_url,
-                  store,
-                  cache,
-                  createNode,
-                  createNodeId,
-                });
-
-                if (fileNode) {
-                  fileNodeID = fileNode.id;
-
-                  await cache.set(mediaDataCacheKey, {
-                    fileNodeID,
-                    updatedAt: file.updatedAt,
-                  });
-                }
-              } catch (e) {
-                // Ignore
-                console.log('err', e);
-              }
-            }
+            const fileNodeID = await downloadFile(file, ctx);
 
             return fileNodeID;
           })
