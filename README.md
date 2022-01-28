@@ -139,13 +139,13 @@ You can query Document nodes created from your Strapi API like the following:
       }
       # Richtext field
       content {
-        content {
+        data {
           childMarkdownRemark {
             html
           }
         }
         # Extracted files from the richtext field
-        localFiles {
+        medias {
           localFile {
             childImageSharp {
               gatsbyImageData
@@ -156,6 +156,8 @@ You can query Document nodes created from your Strapi API like the following:
           src
           # Prefixed url
           url
+          # Original media from the media library
+          file
         }
       }
     }

@@ -16,7 +16,9 @@ const reader = new Parser();
 const prepareJSONNode = (json, ctx) => {
   const { createContentDigest, createNodeId, parentNode, attributeName } = ctx;
 
-  const jsonNodeId = createNodeId(`${parentNode.strapi_id}-${attributeName}-JSONNode`);
+  const jsonNodeId = createNodeId(
+    `${parentNode.strapi_id}-${parentNode.internal.type}-${attributeName}-JSONNode`
+  );
 
   const JSONNode = {
     ...(_.isPlainObject(json) ? { ...json } : { strapi_json_value: json }),
@@ -75,7 +77,9 @@ const prepareRelationNode = (relation, ctx) => {
  */
 const prepareTextNode = (text, ctx) => {
   const { createContentDigest, createNodeId, parentNode, attributeName } = ctx;
-  const textNodeId = createNodeId(`${parentNode.strapi_id}-${attributeName}-TextNode`);
+  const textNodeId = createNodeId(
+    `${parentNode.strapi_id}-${parentNode.internal.type}-${attributeName}-TextNode`
+  );
 
   const textNode = {
     id: textNodeId,
@@ -218,7 +222,7 @@ export const createNodes = (entity, ctx, uid) => {
 
       // Create nodes for richtext in order to make the markdown-remark plugin works
       if (type === 'richtext') {
-        const textNode = prepareTextNode(value[attributeName], {
+        const textNode = prepareTextNode(value.data, {
           createContentDigest,
           createNodeId,
           parentNode: entryNode,
@@ -227,9 +231,9 @@ export const createNodes = (entity, ctx, uid) => {
 
         entryNode.children = entryNode.children.concat([textNode.id]);
 
-        entity[attributeName][`${attributeName}___NODE`] = textNode.id;
+        entity[attributeName][`data___NODE`] = textNode.id;
 
-        delete entity[attributeName][attributeName];
+        delete entity[attributeName].data;
 
         nodes.push(textNode);
       }
@@ -371,7 +375,7 @@ const extractImages = async (item, ctx, uid) => {
 
     if (value && type) {
       if (type === 'richtext') {
-        const extractedFiles = extractFiles(value[attributeName], apiURL);
+        const extractedFiles = extractFiles(value.data, apiURL);
 
         const files = await Promise.all(
           extractedFiles.map(async ({ url }) => {
@@ -391,18 +395,19 @@ const extractImages = async (item, ctx, uid) => {
 
             const fileNodeID = await downloadFile(file, ctx);
 
-            return fileNodeID;
+            return { fileNodeID, file };
           })
         );
 
-        const nodeIds = files.filter(Boolean);
+        const fileNodes = files.filter(Boolean);
 
-        for (let i = 0; i < nodeIds.length; i++) {
-          item[attributeName][`localFiles`].push({
+        for (let i = 0; i < fileNodes.length; i++) {
+          item[attributeName].medias.push({
             alternativeText: extractedFiles[i].alternativeText,
             url: extractedFiles[i].url,
             src: extractedFiles[i].src,
-            localFile___NODE: nodeIds[i],
+            localFile___NODE: fileNodes[i].fileNodeID,
+            file: fileNodes[i].file,
           });
         }
       }

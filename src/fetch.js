@@ -57,8 +57,8 @@ const cleanAttributes = (attributes, currentSchema, schemas) => {
       return {
         ...acc,
         [attributeName]: {
-          [attributeName]: value,
-          localFiles: [],
+          data: value,
+          medias: [],
         },
       };
     }
