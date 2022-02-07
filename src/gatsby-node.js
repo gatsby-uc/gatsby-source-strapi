@@ -14,7 +14,12 @@
 
 import { fetchStrapiContentTypes, fetchEntities, fetchEntity } from './fetch';
 import { downloadMediaFiles } from './download-media-files';
-import { buildMapFromNodes, buildNodesToRemoveMap, getEndpoints } from './helpers';
+import {
+  buildMapFromNodes,
+  buildNodesToRemoveMap,
+  getEndpoints,
+  makeParentNodeName,
+} from './helpers';
 import { createNodes } from './normalize';
 
 const LAST_FETCHED_KEY = 'timestamp';
@@ -129,6 +134,8 @@ exports.sourceNodes = async (
     }
   });
 
+  let warnOnceForNoSupport = false;
+
   for (let i = 0; i < endpoints.length; i++) {
     const { uid } = endpoints[i];
 
@@ -138,6 +145,32 @@ exports.sourceNodes = async (
       const nodes = createNodes(entity, ctx, uid);
 
       await Promise.all(nodes.map((n) => actions.createNode(n)));
+
+      const nodeType = makeParentNodeName(ctx.schemas, uid);
+
+      const mainEntryNode = nodes.find((n) => {
+        return n && n.strapi_id === entity.id && n.internal.type === nodeType;
+      });
+
+      const isPreview = process.env.GATSBY_IS_PREVIEW === `true`;
+      const createNodeManifestIsSupported = typeof unstable_createNodeManifest === `function`;
+      const shouldCreateNodeManifest = isPreview && createNodeManifestIsSupported && mainEntryNode;
+
+      if (shouldCreateNodeManifest) {
+        const updatedAt = entity.updatedAt;
+        const manifestId = `${nodeType}-${mainEntryNode.strapi_id}-${updatedAt}`;
+
+        actions.unstable_createNodeManifest({
+          manifestId,
+          node: mainEntryNode,
+          updatedAtUTC: updatedAt,
+        });
+      } else if (isPreview && !createNodeManifestIsSupported && !warnOnceForNoSupport) {
+        console.warn(
+          `gatsby-source-strapi: Your version of Gatsby core doesn't support Content Sync (via the unstable_createNodeManifest action). Please upgrade to the latest version to use Content Sync in your site.`
+        );
+        warnOnceForNoSupport = true;
+      }
     }
   }
 
