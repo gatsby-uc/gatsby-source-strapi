@@ -158,7 +158,7 @@ exports.sourceNodes = async (
 
       if (shouldCreateNodeManifest) {
         const updatedAt = entity.updatedAt;
-        const manifestId = `${nodeType}-${mainEntryNode.strapi_id}-${updatedAt}`;
+        const manifestId = `${uid}-${entity.id}-${updatedAt}`;
 
         actions.unstable_createNodeManifest({
           manifestId,
