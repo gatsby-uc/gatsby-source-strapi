@@ -34,24 +34,13 @@ const strapiConfig = {
         populate: '*',
       },
     },
-    {
-      singularName: 'company',
-    },
+    // String litteral works too
+    'company',
     {
       singularName: 'author',
     },
   ],
-  singleTypes: [
-    // {
-    //   singularName: "about",
-    //   /**
-    //    * Default queryParams value
-    //    * {
-    //    *  populate: '*',
-    //    * }
-    //    * */
-    // },
-  ],
+  singleTypes: [],
 };
 
 plugins: [
@@ -111,13 +100,13 @@ const strapiConfig = {
 
 Strapi now supports [internationalization](https://strapi.io/documentation/developer-docs/latest/development/plugins/i18n.html#installation). But by default, this plugin will only fetch data in the default locale of your Strapi app. If your content types are available in different locales, you can also pass an entity definition object to specify the locale you want to fetch for a content type. Use the `all` value to get all available locales on a collection type.
 
-##### TODO
-
 #### Draft content
 
 Strapi now supports [Draft and publish](https://strapi.io/documentation/developer-docs/latest/concepts/draft-and-publish.html#draft-and-publish), which allows you to save your content as a draft and publish it later. By default, this plugin will only fetch the published content.
 
 But you may want to fetch unpublished content in Gatsby as well. To do so, find a content type that has draft & publish enabled, and add an entity definition object to your config. Then, use the query string option to specify the [publication state](https://strapi.io/documentation/developer-docs/latest/developer-resources/content-api/content-api.html#publication-state) API parameter.
+
+#### TODO
 
 ## Querying data
 
@@ -167,3 +156,11 @@ You can query Document nodes created from your Strapi API like the following:
   }
 }
 ```
+
+## Restrictions and limitations
+
+This plugin has several limitations, please be aware of these:
+
+1. At the moment, fields that do not have at least one populated instance will not be created in the GraphQL schema. This can break your site when field values get removed. You may workaround with an extra content entry with all fields filled out.
+
+2. When using relational fields, be aware that this source plugin will automatically create the reverse reference for the first level of relation. It is advised to query both `articles` and `categories` if you want to link the properly and be able to navigate properly in the GraphQL schema.

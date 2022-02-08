@@ -90,7 +90,7 @@ const getContentTypeSchema = (schemas, ctUID) => {
 };
 
 const getEndpoints = ({ collectionTypes, singleTypes }, schemas) => {
-  const types = [...(collectionTypes || []), ...(singleTypes || [])];
+  const types = normalizeConfig({ collectionTypes, singleTypes });
 
   const endpoints = schemas
     .filter(
@@ -131,6 +131,24 @@ const getEndpoints = ({ collectionTypes, singleTypes }, schemas) => {
     });
 
   return endpoints;
+};
+
+const normalizeConfig = ({ collectionTypes, singleTypes }) => {
+  const toSchemaDef = (types) =>
+    types
+      .map((config) => {
+        if (_.isPlainObject(config)) {
+          return config;
+        }
+
+        return { singularName: config };
+      })
+      .filter(Boolean);
+
+  const normalizedCollectionTypes = toSchemaDef(collectionTypes);
+  const normalizedSingleTypes = toSchemaDef(singleTypes);
+
+  return [...(normalizedCollectionTypes || []), ...(normalizedSingleTypes || [])];
 };
 
 const makeParentNodeName = (schemas, uid) => {
