@@ -66,15 +66,17 @@ const fetchEntities = async ({ endpoint, queryParams, uid }, ctx) => {
       `Starting to fetch data from Strapi - ${opts.url} with ${JSON.stringify(opts.params)}`
     );
 
-    const {
-      data: { data, meta },
-    } = await axiosInstance(opts);
+    const { data: response } = await axiosInstance(opts);
 
-    const page = parseInt(meta.pagination.page);
+    const data = response?.data || response;
+    const meta = response?.meta;
 
-    const pagesToGet = Array.from({ length: parseInt(meta.pagination.pageCount, 10) - page }).map(
-      (_, i) => i + page + 1
-    );
+    const page = parseInt(meta?.pagination.page || 1, 10);
+    const pageCount = parseInt(meta?.pagination.pageCount || 1, 10);
+
+    const pagesToGet = Array.from({
+      length: pageCount - page,
+    }).map((_, i) => i + page + 1);
 
     const arrayOfPromises = pagesToGet.map((page) => {
       return (async () => {

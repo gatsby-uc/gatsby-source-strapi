@@ -47,7 +47,7 @@ const extractFiles = (text, apiURL) => {
  * @param {Object} ctx
  * @returns {String} node Id
  */
-const downloadFile = async (file, ctx) => {
+export const downloadFile = async (file, ctx) => {
   const {
     actions: { createNode, touchNode },
     cache,
