@@ -39,8 +39,6 @@ const strapiConfig = {
     {
       singularName: 'author',
     },
-    // Query all files
-    'file',
   ],
   singleTypes: [],
 };
