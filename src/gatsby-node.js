@@ -13,7 +13,7 @@
  */
 
 import { fetchStrapiContentTypes, fetchEntities, fetchEntity } from './fetch';
-import { downloadMediaFiles } from './download-media-files';
+import { downloadFile, downloadMediaFiles } from './download-media-files';
 import {
   buildMapFromNodes,
   buildNodesToRemoveMap,
@@ -139,37 +139,60 @@ exports.sourceNodes = async (
   for (let i = 0; i < endpoints.length; i++) {
     const { uid } = endpoints[i];
 
-    await downloadMediaFiles(data[i], ctx, uid);
+    if (uid === 'plugin::upload.file') {
+      for (let file of data[i]) {
+        file.strapi_id = file.id;
+        const fileNodeId = await downloadFile(file, ctx);
 
-    for (let entity of data[i]) {
-      const nodes = createNodes(entity, ctx, uid);
+        file[`localFile___NODE`] = fileNodeId;
+        const nodeType = makeParentNodeName(ctx.schemas, uid);
 
-      await Promise.all(nodes.map((n) => actions.createNode(n)));
-
-      const nodeType = makeParentNodeName(ctx.schemas, uid);
-
-      const mainEntryNode = nodes.find((n) => {
-        return n && n.strapi_id === entity.id && n.internal.type === nodeType;
-      });
-
-      const isPreview = process.env.GATSBY_IS_PREVIEW === `true`;
-      const createNodeManifestIsSupported = typeof unstable_createNodeManifest === `function`;
-      const shouldCreateNodeManifest = isPreview && createNodeManifestIsSupported && mainEntryNode;
-
-      if (shouldCreateNodeManifest) {
-        const updatedAt = entity.updatedAt;
-        const manifestId = `${uid}-${entity.id}-${updatedAt}`;
-
-        actions.unstable_createNodeManifest({
-          manifestId,
-          node: mainEntryNode,
-          updatedAtUTC: updatedAt,
+        await actions.createNode({
+          ...file,
+          id: createNodeId(`${nodeType}-${file.id}`),
+          parent: null,
+          children: [],
+          internal: {
+            type: nodeType,
+            content: JSON.stringify(file),
+            contentDigest: createContentDigest(file),
+          },
         });
-      } else if (isPreview && !createNodeManifestIsSupported && !warnOnceForNoSupport) {
-        console.warn(
-          `gatsby-source-strapi: Your version of Gatsby core doesn't support Content Sync (via the unstable_createNodeManifest action). Please upgrade to the latest version to use Content Sync in your site.`
-        );
-        warnOnceForNoSupport = true;
+      }
+    } else {
+      await downloadMediaFiles(data[i], ctx, uid);
+
+      for (let entity of data[i]) {
+        const nodes = createNodes(entity, ctx, uid);
+
+        await Promise.all(nodes.map((n) => actions.createNode(n)));
+
+        const nodeType = makeParentNodeName(ctx.schemas, uid);
+
+        const mainEntryNode = nodes.find((n) => {
+          return n && n.strapi_id === entity.id && n.internal.type === nodeType;
+        });
+
+        const isPreview = process.env.GATSBY_IS_PREVIEW === `true`;
+        const createNodeManifestIsSupported = typeof unstable_createNodeManifest === `function`;
+        const shouldCreateNodeManifest =
+          isPreview && createNodeManifestIsSupported && mainEntryNode;
+
+        if (shouldCreateNodeManifest) {
+          const updatedAt = entity.updatedAt;
+          const manifestId = `${uid}-${entity.id}-${updatedAt}`;
+
+          actions.unstable_createNodeManifest({
+            manifestId,
+            node: mainEntryNode,
+            updatedAtUTC: updatedAt,
+          });
+        } else if (isPreview && !createNodeManifestIsSupported && !warnOnceForNoSupport) {
+          console.warn(
+            `gatsby-source-strapi: Your version of Gatsby core doesn't support Content Sync (via the unstable_createNodeManifest action). Please upgrade to the latest version to use Content Sync in your site.`
+          );
+          warnOnceForNoSupport = true;
+        }
       }
     }
   }

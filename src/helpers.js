@@ -101,6 +101,17 @@ const getEndpoints = ({ collectionTypes, singleTypes }, schemas) => {
       const options = types.find((config) => config.singularName === singularName);
       const { queryParams, queryLimit } = options;
 
+      if (uid === 'plugin::upload.file') {
+        return {
+          singularName,
+          pluralName,
+          kind,
+          uid,
+          endpoint: '/api/upload/files',
+          queryParams: {},
+        };
+      }
+
       if (kind === 'singleType') {
         return {
           singularName,

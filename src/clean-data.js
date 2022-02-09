@@ -151,12 +151,13 @@ export const cleanAttributes = (attributes, currentSchema, schemas) => {
  * @param {Object} ctx
  * @returns {Object}
  */
-export const cleanData = ({ id, attributes }, ctx) => {
+export const cleanData = ({ id, attributes, ...rest }, ctx) => {
   const { schemas, contentTypeUid } = ctx;
   const currentContentTypeSchema = getContentTypeSchema(schemas, contentTypeUid);
 
   return {
     id,
+    ...rest,
     ...cleanAttributes(attributes, currentContentTypeSchema, schemas),
   };
 };
