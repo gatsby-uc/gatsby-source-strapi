@@ -19,7 +19,7 @@ const MEDIA_FIELDS = [
   'updatedAt',
 ];
 
-const restrictedFields = ['__component'];
+const restrictedFields = ['__component', `children`, `fields`, `internal`, `parent`];
 
 /**
  * Removes the attribute key in the entire data.

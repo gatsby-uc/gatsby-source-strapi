@@ -136,6 +136,8 @@ exports.sourceNodes = async (
 
   let warnOnceForNoSupport = false;
 
+  await cache.set(LAST_FETCHED_KEY, Date.now());
+
   for (let i = 0; i < endpoints.length; i++) {
     const { uid } = endpoints[i];
 
@@ -175,8 +177,4 @@ exports.sourceNodes = async (
   }
 
   return;
-};
-
-exports.onPostBuild = async ({ cache }) => {
-  await cache.set(LAST_FETCHED_KEY, Date.now());
 };
