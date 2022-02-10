@@ -155,7 +155,8 @@ exports.sourceNodes = async (
       });
 
       const isPreview = process.env.GATSBY_IS_PREVIEW === `true`;
-      const createNodeManifestIsSupported = typeof unstable_createNodeManifest === `function`;
+      const createNodeManifestIsSupported =
+        typeof actions.unstable_createNodeManifest === `function`;
       const shouldCreateNodeManifest = isPreview && createNodeManifestIsSupported && mainEntryNode;
 
       if (shouldCreateNodeManifest) {
