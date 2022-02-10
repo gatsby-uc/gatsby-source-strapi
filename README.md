@@ -2,7 +2,7 @@
 
 Source plugin for pulling documents into Gatsby from a Strapi API.
 
-> ⚠️ This version of `gatsby-source-strapi` is only compatible with Strapi v4.
+> ⚠️ This version of `gatsby-source-strapi` is only compatible with Strapi v4. For v3 use this [release](https://www.npmjs.com/package/gatsby-source-strapi/v/1.0.3)
 
 <details>
 <summary><strong>Table of contents</strong></summary>
@@ -23,22 +23,16 @@ Source plugin for pulling documents into Gatsby from a Strapi API.
 
 ## Installing the plugin
 
-```shell
-# Using Yarn
-yarn add gatsby-source-strapi
-yarn add gatsby-plugin-image
-yarn add gatsby-plugin-sharp
-yarn add gatsby-source-filesystem
-yarn add gatsby-transformer-remark
-yarn add gatsby-transformer-sharp
+### Using yarn
 
-# Or using NPM
-npm install --save gatsby-source-strapi
-npm install --save gatsby-plugin-image
-npm install --save gatsby-plugin-sharp
-npm install --save gatsby-source-filesystem
-npm install --save gatsby-transformer-remark
-npm install --save gatsby-transformer-sharp
+```sh
+yarn add gatsby-source-strapi gatsby-plugin-image gatsby-plugin-sharp gatsby-source-filesystem gatsby-transformer-remark gatsby-transformer-sharp
+```
+
+### Or using NPM
+
+```sh
+npm install --save gatsby-source-strapi gatsby-plugin-image gatsby-plugin-sharp gatsby-source-filesystem gatsby-transformer-remark gatsby-transformer-sharp
 ```
 
 ## Setting up the plugin
@@ -49,7 +43,7 @@ You can enable and configure this plugin in your `gatsby-config.js` file.
 
 First, you need to configure the `STRAPI_API_URL` and the `STRAPI_TOKEN` environment variables. We recommend using [`dotenv`][https://github.com/motdotla/dotenv] to expose these variables.
 
-> Make sure to create a full-access API TOKEN in Strapi
+Make sure to create a full-access [API TOKEN](https://docs.strapi.io/developer-docs/latest/setup-deployment-guides/configurations/optional/api-tokens.html) in Strapi.
 
 **Path:** `./.env.development`
 
@@ -120,7 +114,7 @@ const strapiConfig = {
 
 Strapi now supports [Draft and publish](https://strapi.io/documentation/developer-docs/latest/concepts/draft-and-publish.html#draft-and-publish), which allows you to save your content as a draft and publish it later. By default, this plugin will only fetch the published content.
 
-But you may want to fetch unpublished content in Gatsby as well. To do so, find a content type that has draft & publish enabled, and add an entity definition object to your config. Then, use the query string option to specify the [publication state](https://strapi.io/documentation/developer-docs/latest/developer-resources/content-api/content-api.html#publication-state) API parameter.
+But you may want to fetch unpublished content in Gatsby as well. To do so, find a content type that has draft & publish enabled, and add an entity definition object to your config. Then, use the query string option to specify the [publication state](https://docs.strapi.io/developer-docs/latest/concepts/draft-and-publish.html) API parameter.
 
 **Path:** `./gatsby.config.js`
 
@@ -171,7 +165,7 @@ To query your asset use the following query:
       cover {
         localFile {
           childImageSharp {
-            gatsbyImageData(formats: NO_CHANGE)
+            gatsbyImageData
           }
         }
       }
@@ -184,11 +178,11 @@ To query your asset use the following query:
 
 Rich text fields can now be processed using the [`gatsby-transformer-remark`](https://www.gatsbyjs.com/plugins/gatsby-transformer-remark/https://www.gatsbyjs.com/plugins/gatsby-transformer-remark/) plugin.
 
-> It only works if the content of the rich text field saved in the database is in markdown format so if you customised the WYSIWYG in your Strapi Administration panel make sure that it is saved in a markdown format.
+> It only works if the content of the rich text field saved in the database is in markdown format. So if you customized the WYSIWYG in your Strapi Administration panel make sure that it is saved in a markdown format.
 
 Files that are added in the richtext field can now also be processed by the [`gatsby-plugin-image`](https://www.gatsbyjs.com/plugins/gatsby-plugin-image/?=gatsby-plugin-i#gatsby-plugin-image) plugin.
 
-> To do so, according the [restrictons and limitations of the plugin](#restrictions-and-limitations) you need to make sure that at least one of your content types entities has a file uploaded in the richtext field.
+To do so, according the [restrictons and limitations of the plugin](#restrictions-and-limitations) you need to make sure that at least one of your content types entities has a file uploaded in the richtext field.
 
 To query markdown local fields use the following query:
 
@@ -221,7 +215,7 @@ To query markdown local fields use the following query:
           # file processed with gatsby-plugin-image
           localFile {
             childImageSharp {
-              gatsbyImageData(formats: NO_CHANGE)
+              gatsbyImageData
             }
           }
           # src set in your markdown field (ex: [alternativeText](src))
@@ -235,10 +229,6 @@ To query markdown local fields use the following query:
   }
 }
 ```
-
-<!-- #### Internationalization support
-
-Strapi now supports [internationalization](https://strapi.io/documentation/developer-docs/latest/development/plugins/i18n.html#installation). But by default, this plugin will only fetch data in the default locale of your Strapi app. If your content types are available in different locales, you can also pass an entity definition object to specify the locale you want to fetch for a content type. Use the `all` value to get all available locales on a collection type. -->
 
 #### Components
 
@@ -255,7 +245,9 @@ To query a specific component use the following query:
 
 #### Dynamic zones
 
-To query dynamic zones use the following query:
+To query dynamic zones, , write a query using [inline GraphQL fragments](https://graphql.org/learn/queries/#inline-fragments).
+
+You can use the following query:
 
 ```graphql
 {
@@ -293,7 +285,7 @@ This plugin has several limitations, please be aware of these:
 
 2. When using relational fields, be aware that this source plugin will automatically create the reverse reference for the first level of relation. It is advised to query both `articles` and `categories` if you want to link the properly and be able to navigate properly in the GraphQL schema.
 
-3. In Gatsby some field names are restricted therefore these fields will be prefixed by `strapi_` here's the list of the restricted field names:
+3. In Gatsby, some field names are restricted therefore these fields will be prefixed by `strapi_`. Here's the list of the restricted field names:
 
 - `children`
 - `fields`
