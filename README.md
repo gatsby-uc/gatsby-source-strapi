@@ -11,6 +11,12 @@ Source plugin for pulling documents into Gatsby from a Strapi API.
   - [Install](#installing-the-plugin)
     - [Basic usage](#basic-usage)
     - [Advanced usage](#advanced-usage)
+      - [Deep queries populate](#deep-queries-populate)
+      - [Draft content](#draft-content)
+      - [Image optimisation](#image-optimisation)
+      - [Rich text field](#rich-text-field)
+      - [Components](#components)
+      - [Dynamic zones](#dynamic-zones)
   - [Restrictions and limitations](#restrictions-and-limitations)
 
 </details>
@@ -20,9 +26,19 @@ Source plugin for pulling documents into Gatsby from a Strapi API.
 ```shell
 # Using Yarn
 yarn add gatsby-source-strapi
+yarn add gatsby-plugin-image
+yarn add gatsby-plugin-sharp
+yarn add gatsby-source-filesystem
+yarn add gatsby-transformer-remark
+yarn add gatsby-transformer-sharp
 
 # Or using NPM
 npm install --save gatsby-source-strapi
+npm install --save gatsby-plugin-image
+npm install --save gatsby-plugin-sharp
+npm install --save gatsby-source-filesystem
+npm install --save gatsby-transformer-remark
+npm install --save gatsby-transformer-sharp
 ```
 
 ## Setting up the plugin
@@ -145,11 +161,129 @@ Then in your GraphQL query you should be able to display published content by us
 
 #### Image optimisation
 
-TODO
+By default all medias are downloaded in the Gatsby file system.
+To query your asset use the following query:
+
+```graphql
+{
+  allStrapiArticle {
+    nodes {
+      cover {
+        localFile {
+          childImageSharp {
+            gatsbyImageData(formats: NO_CHANGE)
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+#### Rich text field
+
+Rich text fields can now be processed using the [`gatsby-transformer-remark`](https://www.gatsbyjs.com/plugins/gatsby-transformer-remark/https://www.gatsbyjs.com/plugins/gatsby-transformer-remark/) plugin.
+
+> It only works if the content of the rich text field saved in the database is in markdown format so if you customised the WYSIWYG in your Strapi Administration panel make sure that it is saved in a markdown format.
+
+Files that are added in the richtext field can now also be processed by the [`gatsby-plugin-image`](https://www.gatsbyjs.com/plugins/gatsby-plugin-image/?=gatsby-plugin-i#gatsby-plugin-image) plugin.
+
+> To do so, according the [restrictons and limitations of the plugin](#restrictions-and-limitations) you need to make sure that at least one of your content types entities has a file uploaded in the richtext field.
+
+To query markdown local fields use the following query:
+
+```graphql
+{
+  allStrapiArticle {
+    nodes {
+      # richtext field content
+      body {
+        # object to access the markdown node
+        data {
+          # unprocessed data from Strapi
+          body
+          # processed markdown
+          childMarkdownRemark {
+            html
+            rawMarkdownBody
+          }
+        }
+        # files from the markdown that are processed using the gatsby-image-plugin
+        medias {
+          # alternative text saved in the markdown
+          alternativeText
+          # file from the media library
+          file {
+            # alternative text of the file in the media library
+            # it can be different from the one set in your markdown
+            alternativeText
+          }
+          # file processed with gatsby-plugin-image
+          localFile {
+            childImageSharp {
+              gatsbyImageData(formats: NO_CHANGE)
+            }
+          }
+          # src set in your markdown field (ex: [alternativeText](src))
+          src
+          # prefixed url with the Strapi api endpoint of the file
+          # when using a provider the src field value is equal to the url field value
+          url
+        }
+      }
+    }
+  }
+}
+```
 
 <!-- #### Internationalization support
 
 Strapi now supports [internationalization](https://strapi.io/documentation/developer-docs/latest/development/plugins/i18n.html#installation). But by default, this plugin will only fetch data in the default locale of your Strapi app. If your content types are available in different locales, you can also pass an entity definition object to specify the locale you want to fetch for a content type. Use the `all` value to get all available locales on a collection type. -->
+
+#### Components
+
+Strapi components creates unique Gatsby nodes to be able to query a single component in GraphQL using the Gatsby id.
+To query a specific component use the following query:
+
+```graphql
+{
+  strapiComponentSharedRichText(id: { eq: "id" }) {
+    id
+  }
+}
+```
+
+#### Dynamic zones
+
+To query dynamic zones use the following query:
+
+```graphql
+{
+  allStrapiArticle {
+    nodes {
+      blocks {
+        ... on STRAPI__COMPONENT_SHARED_RICH_TEXT {
+          id
+          # Since __component is forbidden in gatsby this field is prefixed by strapi_
+          strapi_component
+        }
+        ... on STRAPI__COMPONENT_SHARED_QUOTE {
+          id
+          strapi_component
+        }
+        ... on STRAPI__COMPONENT_SHARED_MEDIA {
+          id
+          strapi_component
+        }
+        ... on STRAPI__COMPONENT_SHARED_SLIDER {
+          id
+          strapi_component
+        }
+      }
+    }
+  }
+}
+```
 
 ## Restrictions and limitations
 
@@ -159,51 +293,9 @@ This plugin has several limitations, please be aware of these:
 
 2. When using relational fields, be aware that this source plugin will automatically create the reverse reference for the first level of relation. It is advised to query both `articles` and `categories` if you want to link the properly and be able to navigate properly in the GraphQL schema.
 
-## Querying data
+3. In Gatsby some field names are restricted therefore these fields will be prefixed by `strapi_` here's the list of the restricted field names:
 
-You can query Document nodes created from your Strapi API like the following:
-
-```graphql
-{
-  allStrapiArticle {
-    nodes {
-      author {
-        name
-        avatar {
-          localFile {
-            childImageSharp {
-              gatsbyImageData
-            }
-          }
-        }
-      }
-      categories {
-        name
-      }
-      # Richtext field
-      content {
-        data {
-          childMarkdownRemark {
-            html
-          }
-        }
-        # Extracted files from the richtext field
-        medias {
-          localFile {
-            childImageSharp {
-              gatsbyImageData
-            }
-          }
-          alternativeText
-          # Original url in the markdown
-          src
-          # Prefixed url
-          url
-          # Original media from the media library
-          file
-        }
-      }
-    }
-  }
-}
-```
+- `children`
+- `fields`
+- `internal`
+- `parent`
