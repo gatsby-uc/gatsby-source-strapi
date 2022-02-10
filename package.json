@@ -46,7 +46,7 @@
     "strapi"
   ],
   "dependencies": {
-    "axios": "0.21.1",
+    "axios": "0.21.2",
     "gatsby-node-helpers": "0.3.0",
     "gatsby-source-filesystem": "3.7.1",
     "lodash": "4.17.21",
