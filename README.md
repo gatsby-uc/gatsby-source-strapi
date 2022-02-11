@@ -44,7 +44,7 @@ You can enable and configure this plugin in your `gatsby-config.js` file.
 
 First, you need to configure the `STRAPI_API_URL` and the `STRAPI_TOKEN` environment variables. We recommend using [`dotenv`][https://github.com/motdotla/dotenv] to expose these variables.
 
-Make sure to create a full-access [API TOKEN](https://docs.strapi.io/developer-docs/latest/setup-deployment-guides/configurations/optional/api-tokens.html) in Strapi.
+Make sure to create a full-access [API token](https://docs.strapi.io/developer-docs/latest/setup-deployment-guides/configurations/optional/api-tokens.html) in Strapi.
 
 **Path:** `./.env.development`
 
@@ -294,13 +294,14 @@ To enable content sync in [Gatsby cloud](https://www.gatsbyjs.com/docs/how-to/pr
 
 At this point each time you create an entry the webhooks will trigger a new build a deploy your new Gatsby site.
 
-- In the Site settings, Environment variables fill the:
-  - Build variables with the following:
-    - STRAPI_API_URL with the url of your deployed Strapi application
-    - STRAPI_TOKEN with your build API TOKEN
-  - Preview variables:
-    - STRAPI_API_URL with the url of your deployed Strapi application
-    - STRAPI_TOKEN with your preview API TOKEN
+In the Site settings, Environment variables fill the:
+
+- Build variables with the following:
+  - STRAPI_API_URL with the url of your deployed Strapi application
+  - STRAPI_TOKEN with your build API token
+- Preview variables:
+  - STRAPI_API_URL with the url of your deployed Strapi application
+  - STRAPI_TOKEN with your preview API token
 
 ### Enabling Content Sync
 
@@ -325,10 +326,10 @@ npm install --save @strapi/plugin-gatsby-preview
 
 #### Configurations
 
-Once the plugin is installed you will need to configure it in the plugin's settings section.
+Once the plugin is installed, you will need to configure it in the plugin's settings section.
 
-- In the Collection types or the Single Types tab enable when enabling the **preview** it will inject a button in the content manager edit view of the corresponding collection type. So, after creating an entry (draft or published) when clicking on the **Open Gatsby preview** button you will be redirected to the Gatsby preview page
-- In the Settings tab enter the Gatsby Content Sync URL which you can find in Gatsby cloud, site settings, Content Sync.
+- In the Collection types or the Single Types tab, when enabling the **preview**, it will inject a button in the content manager edit view of the corresponding content type. So, after creating an entry (draft or published), clicking on the **Open Gatsby preview** button will redirect you to the Gatsby preview page
+- In the Settings tab, enter the Gatsby Content Sync URL. You can find it in Gatsby cloud under "Site settings" and "Content Sync".
 
 ## Restrictions and limitations
 
