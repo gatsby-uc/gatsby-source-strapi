@@ -17,6 +17,7 @@ Source plugin for pulling documents into Gatsby from a Strapi API.
       - [Rich text field](#rich-text-field)
       - [Components](#components)
       - [Dynamic zones](#dynamic-zones)
+  - [Gatsby cloud and preview environment setup](#gatsby-cloud-and-preview-environment-setup)
   - [Restrictions and limitations](#restrictions-and-limitations)
 
 </details>
@@ -114,7 +115,9 @@ const strapiConfig = {
 
 Strapi now supports [Draft and publish](https://strapi.io/documentation/developer-docs/latest/concepts/draft-and-publish.html#draft-and-publish), which allows you to save your content as a draft and publish it later. By default, this plugin will only fetch the published content.
 
-But you may want to fetch unpublished content in Gatsby as well. To do so, find a content type that has draft & publish enabled, and add an entity definition object to your config. Then, use the query string option to specify the [publication state](https://docs.strapi.io/developer-docs/latest/concepts/draft-and-publish.html) API parameter.
+Draft content should only be pulled when previewing content in the Gatsby preview environment to enable the preview you need to fetch content only when the `GATSBY_IS_PREVIEW` environment variable is truthy.
+
+Refer to the [Gatsby cloud and preview environment setup](#gatsby-cloud-and-preview-environment-setup) section to see how to set it up.
 
 **Path:** `./gatsby.config.js`
 
@@ -125,7 +128,7 @@ const strapiConfig = {
     {
       singularName: 'article',
       queryParams: {
-        publicationState: 'preview',
+        publicationState: process.env.GATSBY_IS_PREVIEW ? 'preview' : 'live',
         populate: {
           category: { populate: '*' },
           cover: '*',
@@ -276,6 +279,56 @@ You can use the following query:
   }
 }
 ```
+
+## Gatsby cloud and preview environment setup
+
+### Setup
+
+To enable content sync in [Gatsby cloud](https://www.gatsbyjs.com/docs/how-to/previews-deploys-hosting/deploying-to-gatsby-cloud/) you need to create two webhooks in your Strapi project:
+
+- [Build webhook](https://support.gatsbyjs.com/hc/en-us/articles/360052324394-Build-and-Preview-Webhooks)
+
+![webhook setup](./assets/webhook.png)
+
+- [Preview webhook](https://support.gatsbyjs.com/hc/en-us/articles/360052324394-Build-and-Preview-Webhooks)
+
+At this point each time you create an entry the webhooks will trigger a new build a deploy your new Gatsby site.
+
+- In the Site settings, Environment variables fill the:
+  - Build variables with the following:
+    - STRAPI_API_URL with the url of your deployed Strapi application
+    - STRAPI_TOKEN with your build API TOKEN
+  - Preview variables:
+    - STRAPI_API_URL with the url of your deployed Strapi application
+    - STRAPI_TOKEN with your preview API TOKEN
+
+### Enabling Content Sync
+
+#### Installing the @strapi/plugin-gatsby-preview
+
+In order to enable Gatsby Content Sync and integrate it in your Strapi CMS you need to install the `@strapi/plugin-gatsby-preview` in your Strapi project:
+
+##### Using yarn
+
+```sh
+cd my-strapi-app
+
+yarn add @strapi/plugin-gatsby-preview
+```
+
+##### Using npm
+
+```sh
+cd my-strapi-app
+npm install --save @strapi/plugin-gatsby-preview
+```
+
+#### Configurations
+
+Once the plugin is installed you will need to configure it in the plugin's settings section.
+
+- In the Collection types or the Single Types tab enable when enabling the **preview** it will inject a button in the content manager edit view of the corresponding collection type. So, after creating an entry (draft or published) when clicking on the **Open Gatsby preview** button you will be redirected to the Gatsby preview page
+- In the Settings tab enter the Gatsby Content Sync URL which you can find in Gatsby cloud, site settings, Content Sync.
 
 ## Restrictions and limitations
 
