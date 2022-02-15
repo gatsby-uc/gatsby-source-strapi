@@ -1,17 +1,3 @@
-/**
- * Implement Gatsby's Node APIs in this file.
- *
- * See: https://www.gatsbyjs.com/docs/node-apis/
- */
-// You can delete this file if you're not using it
-
-/**
- * You can uncomment the following line to verify that
- * your plugin is being loaded in your site.
- *
- * See: https://www.gatsbyjs.com/docs/creating-a-local-plugin/#developing-a-local-plugin-that-is-outside-your-project
- */
-
 import { fetchStrapiContentTypes, fetchEntities, fetchEntity } from './fetch';
 import { downloadMediaFiles } from './download-media-files';
 import {
@@ -88,8 +74,8 @@ exports.sourceNodes = async (
         ...endpoint,
         queryParams: {
           ...endpoint.queryParams,
-          // TODO
           filters: {
+            ...endpoint.queryParams.filters,
             updatedAt: { $gt: lastFetched },
           },
         },
