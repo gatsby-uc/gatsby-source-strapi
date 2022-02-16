@@ -1,6 +1,6 @@
 {
   "name": "gatsby-source-strapi",
-  "version": "1.0.3",
+  "version": "2.0.0-alpha.4",
   "description": "Gatsby source plugin for building websites using Strapi as a data source",
   "author": {
     "email": "hi@strapi.io",
@@ -46,11 +46,11 @@
     "strapi"
   ],
   "dependencies": {
-    "axios": "0.21.1",
-    "gatsby-node-helpers": "0.3.0",
-    "gatsby-source-filesystem": "3.7.1",
-    "lodash": "4.17.21",
-    "pluralize": "8.0.0"
+    "axios": "0.24.0",
+    "commonmark": "^0.30.0",
+    "gatsby-source-filesystem": "4.5.1",
+    "lodash": "^4.17.21",
+    "qs": "^6.10.3"
   },
   "devDependencies": {
     "@babel/cli": "7.14.5",
@@ -61,6 +61,12 @@
     "husky": "4.3.0",
     "lint-staged": "10.5.1",
     "prettier": "2.1.2"
+  },
+  "peerDependencies": {
+    "gatsby": "^4.0.0",
+    "gatsby-plugin-image": "^2.5.1",
+    "gatsby-plugin-sharp": "^4.5.1",
+    "sharp": "^0.29.0"
   },
   "husky": {
     "hooks": {

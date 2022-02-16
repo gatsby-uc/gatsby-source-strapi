@@ -1,87 +1,265 @@
-import { has, isObject } from 'lodash/fp';
-import { createRemoteFileNode } from 'gatsby-source-filesystem';
+import _ from 'lodash';
+import { getContentTypeSchema, makeParentNodeName } from './helpers';
 
-const isImage = has('mime');
-const getUpdatedAt = (image) => image.updatedAt || image.updated_at;
+/**
+ * Create a child node for json fields
+ * @param {Object} json value
+ * @param {Object} ctx
+ * @returns {Object} gatsby node
+ */
+const prepareJSONNode = (json, ctx) => {
+  const { createContentDigest, createNodeId, parentNode, attributeName } = ctx;
 
-const extractImage = async (image, ctx) => {
-  const { apiURL, store, cache, createNode, createNodeId, touchNode, getNode, auth } = ctx;
+  const jsonNodeId = createNodeId(
+    `${parentNode.strapi_id}-${parentNode.internal.type}-${attributeName}-JSONNode`
+  );
 
-  let fileNodeID;
+  const JSONNode = {
+    ...(_.isPlainObject(json) ? { ...json } : { strapi_json_value: json }),
+    id: jsonNodeId,
+    parent: parentNode.id,
+    children: [],
+    internal: {
+      type: _.toUpper(`${parentNode.internal.type}_${attributeName}_JSONNode`),
+      mediaType: `application/json`,
+      content: JSON.stringify(json),
+      contentDigest: createContentDigest(json),
+    },
+  };
 
-  // using field on the cache key for multiple image field
-  const mediaDataCacheKey = `strapi-media-${image.id}`;
-  const cacheMediaData = await cache.get(mediaDataCacheKey);
+  return JSONNode;
+};
 
-  // If we have cached media data and it wasn't modified, reuse
-  // previously created file node to not try to redownload
-  if (cacheMediaData && getUpdatedAt(image) === cacheMediaData.updatedAt) {
-    fileNodeID = cacheMediaData.fileNodeID;
-    touchNode(getNode(fileNodeID));
-  }
+/**
+ * Create a child node for relation and link the parent node to it
+ * @param {Object} relation
+ * @param {Object} ctx
+ * @returns {Object} gatsby node
+ */
+const prepareRelationNode = (relation, ctx) => {
+  const { schemas, createNodeId, createContentDigest, parentNode, targetSchemaUid } = ctx;
 
-  // If we don't have cached data, download the file
-  if (!fileNodeID) {
-    // full media url
-    const source_url = `${image.url.startsWith('http') ? '' : apiURL}${image.url}`;
-    const fileNode = await createRemoteFileNode({
-      url: source_url,
-      store,
-      cache,
-      createNode,
-      createNodeId,
-      auth,
-    });
+  // const targetSchema = getContentTypeSchema(schemas, targetSchemaUid);
+  // const {
+  //   schema: { singularName },
+  // } = targetSchema;
 
-    if (fileNode) {
-      fileNodeID = fileNode.id;
+  const nodeType = makeParentNodeName(schemas, targetSchemaUid);
+  const relationNodeId = createNodeId(`${nodeType}-${relation.id}`);
 
-      await cache.set(mediaDataCacheKey, {
-        fileNodeID,
-        updatedAt: getUpdatedAt(image),
-      });
+  const node = {
+    ...relation,
+    id: relationNodeId,
+    strapi_id: relation.id,
+    parent: parentNode.id,
+    children: [],
+    internal: {
+      type: nodeType,
+      content: JSON.stringify(relation),
+      contentDigest: createContentDigest(relation),
+    },
+  };
+
+  return node;
+};
+
+/**
+ * Create a child node for markdown fields
+ * @param {String} text value
+ * @param {Object} ctx
+ * @returns {Object} gatsby node
+ */
+const prepareTextNode = (text, ctx) => {
+  const { createContentDigest, createNodeId, parentNode, attributeName } = ctx;
+  const textNodeId = createNodeId(
+    `${parentNode.strapi_id}-${parentNode.internal.type}-${attributeName}-TextNode`
+  );
+
+  const textNode = {
+    id: textNodeId,
+    parent: parentNode.id,
+    children: [],
+    [attributeName]: text,
+    internal: {
+      type: _.toUpper(`${parentNode.internal.type}_${attributeName}_TextNode`),
+      mediaType: `text/markdown`,
+      content: text,
+      contentDigest: createContentDigest(text),
+    },
+  };
+
+  return textNode;
+};
+
+/**
+ * Returns an array of the main node and children nodes to create
+ * @param {Object} entity the main entry
+ * @param {String} nodeType the name of the main node
+ * @param {Object} ctx object of gatsby functions
+ * @param {String} uid the main schema uid
+ * @returns {Object[]} array of nodes to create
+ */
+export const createNodes = (entity, ctx, uid) => {
+  const nodes = [];
+
+  const { schemas, createNodeId, createContentDigest, getNode } = ctx;
+  const nodeType = makeParentNodeName(schemas, uid);
+
+  let entryNode = {
+    id: createNodeId(`${nodeType}-${entity.id}`),
+    strapi_id: entity.id,
+    parent: null,
+    children: [],
+    internal: {
+      type: nodeType,
+      content: JSON.stringify(entity),
+      contentDigest: createContentDigest(entity),
+    },
+  };
+
+  const schema = getContentTypeSchema(schemas, uid);
+
+  for (const attributeName of Object.keys(entity)) {
+    const value = entity[attributeName];
+
+    const attribute = schema.schema.attributes[attributeName];
+    const type = _.get(attribute, 'type', null);
+
+    if (value) {
+      // Add support for dynamic zones
+      if (type === 'dynamiczone') {
+        value.forEach((v) => {
+          const componentNodeName = makeParentNodeName(schemas, v.strapi_component);
+
+          const valueNodes = _.flatten(createNodes(v, ctx, v.strapi_component));
+          const compoNodeIds = valueNodes
+            .filter(({ internal }) => internal.type === componentNodeName)
+            .map(({ id }) => id);
+
+          entity[`${attributeName}___NODE`] = [
+            ...(entity[`${attributeName}___NODE`] || []),
+            ...compoNodeIds,
+          ];
+
+          valueNodes.forEach((n) => {
+            nodes.push(n);
+          });
+        });
+
+        delete entity[attributeName];
+      }
+
+      if (type === 'relation') {
+        // Create type for the first level of relations, otherwise the user should fetch the other content type
+        // to link them
+        const config = {
+          schemas,
+          createContentDigest,
+          createNodeId,
+          parentNode: entryNode,
+          attributeName,
+          targetSchemaUid: attribute.target,
+        };
+
+        if (Array.isArray(value)) {
+          const relationNodes = value.map((relation) => prepareRelationNode(relation, config));
+          entity[`${attributeName}___NODE`] = relationNodes.map(({ id }) => id);
+
+          relationNodes.forEach((node) => {
+            if (!getNode(node.id)) {
+              nodes.push(node);
+            }
+          });
+        } else {
+          const relationNode = prepareRelationNode(value, config);
+
+          entity[`${attributeName}___NODE`] = relationNode.id;
+
+          const relationNodeToCreate = getNode(relationNode.id);
+
+          if (!relationNodeToCreate) {
+            nodes.push(relationNode);
+          }
+        }
+        delete entity[attributeName];
+      }
+
+      // Apply transformations to components: markdown, json...
+      if (type === 'component') {
+        const componentSchema = getContentTypeSchema(schemas, attribute.component);
+        const componentNodeName = makeParentNodeName(schemas, componentSchema.uid);
+
+        if (attribute.repeatable) {
+          const compoNodes = _.flatten(value.map((v) => createNodes(v, ctx, attribute.component)));
+
+          // Just link the component nodes and not the components' children one
+          entity[`${attributeName}___NODE`] = compoNodes
+            .filter(({ internal }) => internal.type === componentNodeName)
+            .map(({ id }) => id);
+
+          compoNodes.forEach((node) => {
+            nodes.push(node);
+          });
+        } else {
+          const compoNodes = _.flatten(createNodes(value, ctx, attribute.component));
+          // Just link the component node and not the component's children one
+          entity[`${attributeName}___NODE`] = compoNodes.filter(
+            ({ internal }) => internal.type === componentNodeName
+          )[0].id;
+
+          compoNodes.forEach((node) => {
+            nodes.push(node);
+          });
+        }
+
+        delete entity[attributeName];
+      }
+
+      // Create nodes for richtext in order to make the markdown-remark plugin works
+      if (type === 'richtext') {
+        const textNode = prepareTextNode(value.data, {
+          createContentDigest,
+          createNodeId,
+          parentNode: entryNode,
+          attributeName,
+        });
+
+        entryNode.children = entryNode.children.concat([textNode.id]);
+
+        entity[attributeName][`data___NODE`] = textNode.id;
+
+        delete entity[attributeName].data;
+
+        nodes.push(textNode);
+      }
+
+      // Create nodes for JSON fields in order to be able to query each field in GraphiQL
+      // We can remove this if not pertinent
+      if (type === 'json') {
+        const JSONNode = prepareJSONNode(value, {
+          createContentDigest,
+          createNodeId,
+          parentNode: entryNode,
+          attributeName,
+        });
+
+        entryNode.children = entryNode.children.concat([JSONNode.id]);
+
+        entity[`${attributeName}___NODE`] = JSONNode.id;
+        // Resolve only the attributeName___NODE and not to both ones
+        delete entity[attributeName];
+
+        nodes.push(JSONNode);
+      }
     }
   }
 
-  if (fileNodeID) {
-    image.localFile___NODE = fileNodeID;
-  }
-};
+  entryNode = {
+    ...entity,
+    ...entryNode,
+  };
 
-const extractFields = async (item, ctx) => {
-  if (isImage(item)) {
-    return extractImage(item, ctx);
-  }
+  nodes.push(entryNode);
 
-  if (Array.isArray(item)) {
-    for (const element of item) {
-      await extractFields(element, ctx);
-    }
-
-    return;
-  }
-
-  if (isObject(item)) {
-    for (const key in item) {
-      await extractFields(item[key], ctx);
-    }
-
-    return;
-  }
-};
-
-exports.isDynamicZone = (node) => {
-  // Dynamic zones are always arrays
-  if (Array.isArray(node)) {
-    return node.some((nodeItem) => {
-      // The object is a dynamic zone if it has a strapi_component key
-      return has('strapi_component', nodeItem);
-    });
-  }
-  return false;
-};
-
-// Downloads media from image type fields
-exports.downloadMediaFiles = async (entities, ctx) => {
-  return Promise.all(entities.map((entity) => extractFields(entity, ctx)));
+  return nodes;
 };
