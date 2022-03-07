@@ -281,19 +281,34 @@ export const createNodes = (entity, ctx, uid) => {
       }
 
       if (type == 'media') {
-        const MediaNode = prepareMediaNode(value, {
+        const config = {
           createContentDigest,
           createNodeId,
           parentNode: entryNode,
-        });
+        };
 
-        entryNode.children = entryNode.children.concat([MediaNode.id]);
+        if (Array.isArray(value)) {
+          const mediaNodes = value.map((relation) => prepareMediaNode(relation, config));
+          entity[`${attributeName}___NODE`] = mediaNodes.map(({ id }) => id);
 
-        entity[`${attributeName}___NODE`] = MediaNode.id;
+          mediaNodes.forEach((node) => {
+            if (!getNode(node.id)) {
+              nodes.push(node);
+            }
+          });
+        } else {
+          const mediaNode = prepareMediaNode(value, config);
+
+          entity[`${attributeName}___NODE`] = mediaNode.id;
+
+          const relationNodeToCreate = getNode(mediaNode.id);
+
+          if (!relationNodeToCreate) {
+            nodes.push(mediaNode);
+          }
+        }
         // Resolve only the attributeName___NODE and not to both ones
         delete entity[attributeName];
-
-        nodes.push(MediaNode);
       }
     }
   }
