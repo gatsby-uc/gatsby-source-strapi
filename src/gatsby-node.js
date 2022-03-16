@@ -26,6 +26,14 @@ exports.sourceNodes = async (
   },
   pluginOptions
 ) => {
+  // Cast singleTypes and collectionTypes to empty arrays if they're undefined
+  if (pluginOptions.singleTypes == null) {
+    pluginOptions.singleTypes = [];
+  }
+  if (pluginOptions.collectionTypes == null) {
+    pluginOptions.collectionTypes = [];
+  }
+
   const { schemas } = await fetchStrapiContentTypes(pluginOptions);
 
   const { deleteNode, touchNode } = actions;
