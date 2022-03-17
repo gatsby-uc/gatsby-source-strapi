@@ -26,11 +26,11 @@ exports.sourceNodes = async (
   },
   pluginOptions
 ) => {
-  // Cast singleTypes and collectionTypes to empty arrays if they're undefined
-  if (pluginOptions.singleTypes == null) {
+  // Cast singleTypes and collectionTypes to empty arrays if they're not defined
+  if (!Array.isArray(pluginOptions.singleTypes)) {
     pluginOptions.singleTypes = [];
   }
-  if (pluginOptions.collectionTypes == null) {
+  if (!Array.isArray(pluginOptions.collectionTypes)) {
     pluginOptions.collectionTypes = [];
   }
 
