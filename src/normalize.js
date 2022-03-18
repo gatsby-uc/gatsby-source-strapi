@@ -92,6 +92,34 @@ const prepareTextNode = (text, ctx) => {
 };
 
 /**
+ * Create a child node for media and link the parent node to it
+ * @param {Object} media
+ * @param {Object} ctx
+ * @returns {Object} gatsby node
+ */
+const prepareMediaNode = (media, ctx) => {
+  const { createNodeId, createContentDigest, parentNode } = ctx;
+
+  const nodeType = 'STRAPI__MEDIA';
+  const relationNodeId = createNodeId(`${nodeType}-${media.id}`);
+
+  const node = {
+    ...media,
+    id: relationNodeId,
+    strapi_id: media.id,
+    parent: parentNode.id,
+    children: [],
+    internal: {
+      type: nodeType,
+      content: JSON.stringify(media),
+      contentDigest: createContentDigest(media),
+    },
+  };
+
+  return node;
+};
+
+/**
  * Returns an array of the main node and children nodes to create
  * @param {Object} entity the main entry
  * @param {String} nodeType the name of the main node
@@ -250,6 +278,37 @@ export const createNodes = (entity, ctx, uid) => {
         delete entity[attributeName];
 
         nodes.push(JSONNode);
+      }
+
+      if (type == 'media') {
+        const config = {
+          createContentDigest,
+          createNodeId,
+          parentNode: entryNode,
+        };
+
+        if (Array.isArray(value)) {
+          const mediaNodes = value.map((relation) => prepareMediaNode(relation, config));
+          entity[`${attributeName}___NODE`] = mediaNodes.map(({ id }) => id);
+
+          mediaNodes.forEach((node) => {
+            if (!getNode(node.id)) {
+              nodes.push(node);
+            }
+          });
+        } else {
+          const mediaNode = prepareMediaNode(value, config);
+
+          entity[`${attributeName}___NODE`] = mediaNode.id;
+
+          const relationNodeToCreate = getNode(mediaNode.id);
+
+          if (!relationNodeToCreate) {
+            nodes.push(mediaNode);
+          }
+        }
+        // Resolve only the attributeName___NODE and not to both ones
+        delete entity[attributeName];
       }
     }
   }
