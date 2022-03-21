@@ -24,22 +24,22 @@ exports.sourceNodes = async (
     getNodes,
     getNode,
   },
-  pluginOptions
+  strapiConfig
 ) => {
   // Cast singleTypes and collectionTypes to empty arrays if they're not defined
-  if (!Array.isArray(pluginOptions.singleTypes)) {
-    pluginOptions.singleTypes = [];
+  if (!Array.isArray(strapiConfig.singleTypes)) {
+    strapiConfig.singleTypes = [];
   }
-  if (!Array.isArray(pluginOptions.collectionTypes)) {
-    pluginOptions.collectionTypes = [];
+  if (!Array.isArray(strapiConfig.collectionTypes)) {
+    strapiConfig.collectionTypes = [];
   }
 
-  const { schemas } = await fetchStrapiContentTypes(pluginOptions);
+  const { schemas } = await fetchStrapiContentTypes(strapiConfig);
 
   const { deleteNode, touchNode } = actions;
 
   const ctx = {
-    strapiConfig: pluginOptions,
+    strapiConfig,
     actions,
     schemas,
     createContentDigest,
@@ -58,7 +58,7 @@ exports.sourceNodes = async (
 
   existingNodes.forEach((n) => touchNode(n));
 
-  const endpoints = getEndpoints(pluginOptions, schemas);
+  const endpoints = getEndpoints(strapiConfig, schemas);
 
   const lastFetched = await cache.get(LAST_FETCHED_KEY);
 
