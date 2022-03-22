@@ -3,8 +3,8 @@ import createInstance from './axiosInstance';
 import qs from 'qs';
 import { cleanData } from './clean-data';
 
-const fetchStrapiContentTypes = async (pluginOptions) => {
-  const axiosInstance = createInstance(pluginOptions);
+const fetchStrapiContentTypes = async (strapiConfig) => {
+  const axiosInstance = createInstance(strapiConfig);
   const [
     {
       data: { data: contentTypes },
@@ -24,9 +24,12 @@ const fetchStrapiContentTypes = async (pluginOptions) => {
   };
 };
 
-const fetchEntity = async ({ endpoint, queryParams, uid }, ctx) => {
+const fetchEntity = async ({ endpoint, queryParams, uid, pluginOptions }, ctx) => {
   const { strapiConfig, reporter } = ctx;
   const axiosInstance = createInstance(strapiConfig);
+
+  // Ignore queryParams locale in favor of pluginOptions
+  delete queryParams.locale;
 
   const opts = {
     method: 'GET',
@@ -38,9 +41,53 @@ const fetchEntity = async ({ endpoint, queryParams, uid }, ctx) => {
   try {
     reporter.info(`Starting to fetch data from Strapi - ${opts.url} with ${JSON.stringify(opts)}`);
 
+    // Handle internationalization
+    const locale = pluginOptions?.i18n?.locale;
+    const otherLocales = [];
+    if (locale) {
+      if (locale === 'all') {
+        // Get all available locales
+        const { data: response } = await axiosInstance({
+          ...opts,
+          params: {
+            populate: {
+              localizations: {
+                fields: ['locale'],
+              },
+            },
+          },
+        });
+        // otherLocales = response.data.attributes.localizations.data.map(localization => localization.attributes.locale)
+        response.data.attributes.localizations.data.forEach((localization) =>
+          otherLocales.push(localization.attributes.locale)
+        );
+      } else {
+        // Only one locale
+        opts.params.locale = locale;
+      }
+    }
+
+    // Fetch default entity based on request options
     const { data } = await axiosInstance(opts);
 
-    return castArray(data.data).map((entry) => cleanData(entry, { ...ctx, contentTypeUid: uid }));
+    // Fetch other localizations of this entry if there are any
+    const otherLocalizationsPromises = otherLocales.map(async (locale) => {
+      const { data: localizationResponse } = await axiosInstance({
+        ...opts,
+        params: {
+          ...opts.params,
+          locale,
+        },
+      });
+      return localizationResponse.data;
+    });
+
+    // Run queries in parallel
+    const otherLocalizationsData = await Promise.all(otherLocalizationsPromises);
+
+    return castArray([data.data, ...otherLocalizationsData]).map((entry) =>
+      cleanData(entry, { ...ctx, contentTypeUid: uid })
+    );
   } catch (error) {
     // reporter.panic(
     //   `Failed to fetch data from Strapi ${opts.url} with ${JSON.stringify(opts)}`,
@@ -50,9 +97,12 @@ const fetchEntity = async ({ endpoint, queryParams, uid }, ctx) => {
   }
 };
 
-const fetchEntities = async ({ endpoint, queryParams, uid }, ctx) => {
+const fetchEntities = async ({ endpoint, queryParams, uid, pluginOptions }, ctx) => {
   const { strapiConfig, reporter } = ctx;
   const axiosInstance = createInstance(strapiConfig);
+
+  // Ignore queryParams locale in favor of pluginOptions
+  delete queryParams.locale;
 
   const opts = {
     method: 'GET',
@@ -60,6 +110,11 @@ const fetchEntities = async ({ endpoint, queryParams, uid }, ctx) => {
     params: queryParams,
     paramsSerializer: (params) => qs.stringify(params, { encodeValuesOnly: true }),
   };
+
+  // Use locale from pluginOptions if it's defined
+  if (pluginOptions?.i18n?.locale) {
+    opts.params.locale = pluginOptions.i18n.locale;
+  }
 
   try {
     reporter.info(
@@ -78,7 +133,7 @@ const fetchEntities = async ({ endpoint, queryParams, uid }, ctx) => {
       length: pageCount - page,
     }).map((_, i) => i + page + 1);
 
-    const arrayOfPromises = pagesToGet.map((page) => {
+    const fetchPagesPromises = pagesToGet.map((page) => {
       return (async () => {
         const options = {
           ...opts,
@@ -104,7 +159,7 @@ const fetchEntities = async ({ endpoint, queryParams, uid }, ctx) => {
       })();
     });
 
-    const results = await Promise.all(arrayOfPromises);
+    const results = await Promise.all(fetchPagesPromises);
 
     const cleanedData = [...data, ...flattenDeep(results)].map((entry) =>
       cleanData(entry, { ...ctx, contentTypeUid: uid })
