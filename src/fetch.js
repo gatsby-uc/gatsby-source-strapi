@@ -28,9 +28,6 @@ const fetchEntity = async ({ endpoint, queryParams, uid, pluginOptions }, ctx) =
   const { strapiConfig, reporter } = ctx;
   const axiosInstance = createInstance(strapiConfig);
 
-  // Ignore queryParams locale in favor of pluginOptions
-  delete queryParams.locale;
-
   const opts = {
     method: 'GET',
     url: endpoint,
@@ -44,7 +41,11 @@ const fetchEntity = async ({ endpoint, queryParams, uid, pluginOptions }, ctx) =
     // Handle internationalization
     const locale = pluginOptions?.i18n?.locale;
     const otherLocales = [];
+
     if (locale) {
+      // Ignore queryParams locale in favor of pluginOptions
+      delete queryParams.locale;
+
       if (locale === 'all') {
         // Get all available locales
         const { data: response } = await axiosInstance({
@@ -62,7 +63,7 @@ const fetchEntity = async ({ endpoint, queryParams, uid, pluginOptions }, ctx) =
         );
       } else {
         // Only one locale
-        opts.params.locale = locale;
+        queryParams.locale = locale;
       }
     }
 
@@ -100,9 +101,6 @@ const fetchEntities = async ({ endpoint, queryParams, uid, pluginOptions }, ctx)
   const { strapiConfig, reporter } = ctx;
   const axiosInstance = createInstance(strapiConfig);
 
-  // Ignore queryParams locale in favor of pluginOptions
-  delete queryParams.locale;
-
   const opts = {
     method: 'GET',
     url: endpoint,
@@ -112,7 +110,8 @@ const fetchEntities = async ({ endpoint, queryParams, uid, pluginOptions }, ctx)
 
   // Use locale from pluginOptions if it's defined
   if (pluginOptions?.i18n?.locale) {
-    opts.params.locale = pluginOptions.i18n.locale;
+    delete queryParams.locale;
+    queryParams.locale = pluginOptions.i18n.locale;
   }
 
   try {
