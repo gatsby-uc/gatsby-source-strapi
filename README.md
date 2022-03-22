@@ -292,7 +292,7 @@ You can use the following query:
 
 #### Internationalization
 
-Content types in Strapi can be localized with the [i18n plugin](https://docs.strapi.io/developer-docs/latest/plugins/i18n.html). But by default, gatsby-source-strapi will only fetch data in the default locale of your Strapi app. To specify which locale should be fetched, an `i18n` object can be provided in the content type's `pluginOptions`. Use the all value to get all available locales on a collection type.
+Content types in Strapi can be localized with the [i18n plugin](https://docs.strapi.io/developer-docs/latest/plugins/i18n.html). But by default, gatsby-source-strapi will only fetch data in the default locale of your Strapi app. To specify which locale should be fetched, an `i18n` object can be provided in the content type's `pluginOptions`. You can also set the locale to `all` to get all available localizations of a content type:
 
 ```javascript
 const strapiConfig = {
@@ -321,20 +321,20 @@ const strapiConfig = {
 };
 ```
 
-Then use the following query to fetch a localized content:
+Then use the one of the following queries to fetch a localized content type:
 
 ```graphql
 {
   # Get content in all available localizations
   allStrapiGlobal {
     nodes {
-      id
+      locale
     }
   }
 
   # Get a single type in a specific locale
   strapiGlobal(locale: {eq: "fr"}) {
-    id
+    locale
   }
 
   # Get a collection type in a specific locale
