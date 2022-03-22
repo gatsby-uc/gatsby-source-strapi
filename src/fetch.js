@@ -57,7 +57,6 @@ const fetchEntity = async ({ endpoint, queryParams, uid, pluginOptions }, ctx) =
             },
           },
         });
-        // otherLocales = response.data.attributes.localizations.data.map(localization => localization.attributes.locale)
         response.data.attributes.localizations.data.forEach((localization) =>
           otherLocales.push(localization.attributes.locale)
         );
