@@ -8,7 +8,10 @@ Source plugin for pulling documents into Gatsby from a Strapi API.
 <summary><strong>Table of contents</strong></summary>
 
 - [gatsby-source-strapi](#gatsby-source-strapi)
-  - [Install](#installing-the-plugin)
+  - [Installing the plugin](#installing-the-plugin)
+    - [Using yarn](#using-yarn)
+    - [Or using NPM](#or-using-npm)
+  - [Setting up the plugin](#setting-up-the-plugin)
     - [Basic usage](#basic-usage)
     - [Advanced usage](#advanced-usage)
       - [Deep queries populate](#deep-queries-populate)
@@ -17,7 +20,14 @@ Source plugin for pulling documents into Gatsby from a Strapi API.
       - [Rich text field](#rich-text-field)
       - [Components](#components)
       - [Dynamic zones](#dynamic-zones)
+      - [Internationalization](#internationalization)
   - [Gatsby cloud and preview environment setup](#gatsby-cloud-and-preview-environment-setup)
+    - [Setup](#setup)
+    - [Enabling Content Sync](#enabling-content-sync)
+      - [Installing the @strapi/plugin-gatsby-preview](#installing-the-strapiplugin-gatsby-preview)
+        - [Using yarn](#using-yarn-1)
+        - [Using npm](#using-npm)
+      - [Configurations](#configurations)
   - [Restrictions and limitations](#restrictions-and-limitations)
 
 </details>
@@ -42,7 +52,7 @@ You can enable and configure this plugin in your `gatsby-config.js` file.
 
 ### Basic usage
 
-First, you need to configure the `STRAPI_API_URL` and the `STRAPI_TOKEN` environment variables. We recommend using [`dotenv`][https://github.com/motdotla/dotenv] to expose these variables.
+First, you need to configure the `STRAPI_API_URL` and the `STRAPI_TOKEN` environment variables. We recommend using [`dotenv`](https://github.com/motdotla/dotenv) to expose these variables.
 
 Make sure to create a full-access [API token](https://docs.strapi.io/developer-docs/latest/setup-deployment-guides/configurations/optional/api-tokens.html) in Strapi.
 
@@ -248,7 +258,7 @@ To query a specific component use the following query:
 
 #### Dynamic zones
 
-To query dynamic zones, , write a query using [inline GraphQL fragments](https://graphql.org/learn/queries/#inline-fragments).
+To query dynamic zones, write a query using [inline GraphQL fragments](https://graphql.org/learn/queries/#inline-fragments).
 
 You can use the following query:
 
@@ -275,6 +285,62 @@ You can use the following query:
           strapi_component
         }
       }
+    }
+  }
+}
+```
+
+#### Internationalization
+
+Content types in Strapi can be localized with the [i18n plugin](https://docs.strapi.io/developer-docs/latest/plugins/i18n.html). But by default, gatsby-source-strapi will only fetch data in the default locale of your Strapi app. To specify which locale should be fetched, an `i18n` object can be provided in the content type's `pluginOptions`. Use the all value to get all available locales on a collection type.
+
+```javascript
+const strapiConfig = {
+  // ...
+  collectionTypes: [
+    {
+      singularName: 'article',
+      pluginOptions: {
+        i18n: {
+          locale: 'fr', // Only fetch a specific locale
+        },
+      },
+    },
+  ],
+  singleTypes: [
+    {
+      singularName: 'global',
+      pluginOptions: {
+        i18n: {
+          locale: 'all', // Fetch all localizations
+        },
+      },
+    },
+  ],
+  // ...
+};
+```
+
+Then use the following query to fetch a localized content:
+
+```graphql
+{
+  # Get content in all available localizations
+  allStrapiGlobal {
+    nodes {
+      id
+    }
+  }
+
+  # Get a single type in a specific locale
+  strapiGlobal(locale: {eq: "fr"}) {
+    id
+  }
+
+  # Get a collection type in a specific locale
+  allStrapiArticle(filter: {locale: {eq: "fr"}}) {
+    nodes {
+      locale
     }
   }
 }
