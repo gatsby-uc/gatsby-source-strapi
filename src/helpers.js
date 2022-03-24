@@ -99,7 +99,7 @@ const getEndpoints = ({ collectionTypes, singleTypes }, schemas) => {
     )
     .map(({ schema: { kind, singularName, pluralName }, uid }) => {
       const options = types.find((config) => config.singularName === singularName);
-      const { queryParams, queryLimit } = options;
+      const { queryParams, queryLimit, pluginOptions } = options;
 
       if (kind === 'singleType') {
         return {
@@ -110,6 +110,7 @@ const getEndpoints = ({ collectionTypes, singleTypes }, schemas) => {
           queryParams: queryParams || {
             populate: '*',
           },
+          pluginOptions,
         };
       }
 
@@ -127,6 +128,7 @@ const getEndpoints = ({ collectionTypes, singleTypes }, schemas) => {
           },
           populate: queryParams?.populate || '*',
         },
+        pluginOptions,
       };
     });
 
