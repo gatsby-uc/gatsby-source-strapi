@@ -187,6 +187,19 @@ To query your asset use the following query:
 }
 ```
 
+If you do not want this plugin to download your media (images, videos, and file attachments), you can use the `skipMediaProcessing` configuration option
+
+
+**Path:** `./gatsby.config.js`
+
+```javascript
+const strapiConfig = {
+  // ...
+  skipMediaProcessing: true
+  // ...
+};
+```
+
 #### Rich text field
 
 Rich text fields can now be processed using the [`gatsby-transformer-remark`](https://www.gatsbyjs.com/plugins/gatsby-transformer-remark/https://www.gatsbyjs.com/plugins/gatsby-transformer-remark/) plugin.

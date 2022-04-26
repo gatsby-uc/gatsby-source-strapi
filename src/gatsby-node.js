@@ -135,7 +135,9 @@ exports.sourceNodes = async (
   for (let i = 0; i < endpoints.length; i++) {
     const { uid } = endpoints[i];
 
-    await downloadMediaFiles(data[i], ctx, uid);
+    if (!strapiConfig.skipMediaProcessing) {
+      await downloadMediaFiles(data[i], ctx, uid);
+    }
 
     for (let entity of data[i]) {
       const nodes = createNodes(entity, ctx, uid);
