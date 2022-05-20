@@ -44,7 +44,7 @@ export const cleanAttributes = (attributes, currentSchema, schemas) => {
       return acc;
     }
 
-    if (!value) {
+    if (value === undefined || value === null) {
       acc[attributeName] = value;
 
       return acc;
