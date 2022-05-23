@@ -50,7 +50,7 @@ export const cleanAttributes = (attributes, currentSchema, schemas) => {
       return {
         ...acc,
         [attributeName]: {
-          data: value || "",
+          data: value || '',
           medias: [],
         },
       };
