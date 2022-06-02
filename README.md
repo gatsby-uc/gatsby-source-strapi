@@ -187,7 +187,7 @@ To query your asset use the following query:
 }
 ```
 
-If you do not want this plugin to download your media (images, videos, and file attachments), you can use the `skipMediaProcessing` configuration option
+If you do not want this plugin to download your media (images, videos, and file attachments), you can use the `skipFileDownloads` configuration option
 
 
 **Path:** `./gatsby.config.js`
@@ -195,7 +195,7 @@ If you do not want this plugin to download your media (images, videos, and file 
 ```javascript
 const strapiConfig = {
   // ...
-  skipMediaProcessing: true
+  skipFileDownloads: true
   // ...
 };
 ```
