@@ -11,16 +11,16 @@ exports.sourceNodes = async (
 ) => {
   const { createNode, deleteNode, touchNode } = actions
 
+  // Start activity, Strapi data fetching
+  const fetchActivity = reporter.activityTimer(`Fetched Strapi Data`)
+  fetchActivity.start()
+
   // The for loop is needed because of the await promises
   for (const source of sources) {
     const { apiURL, contentTypes, singleTypes, loginData, queryLimit } = source
 
     // Authentication function
     const jwtToken = await authentication({ loginData, reporter, apiURL })
-
-    // Start activity, Strapi data fetching
-    const fetchActivity = reporter.activityTimer(`Fetched Strapi Data`)
-    fetchActivity.start()
 
     // Generate a list of promises based on the `contentTypes` option.
     const contentTypePromises = contentTypes.map(contentType =>
@@ -87,15 +87,17 @@ exports.sourceNodes = async (
       })
     })
 
+    // QUESTION: IS THE CODE BELOW NEEDED WHEN HAVING MULTIPLE CONFIGS?
     // Make a diff array between existing nodes and new ones
-    const diff = existingNodes.filter(
-      ({ id: id1 }) => !newNodes.some(({ id: id2 }) => id2 === id1)
-    )
+    // const diff = existingNodes.filter(
+    //   ({ id: id1 }) => !newNodes.some(({ id: id2 }) => id2 === id1)
+    // )
 
-    // Delete diff nodes
-    diff.forEach(data => {
-      deleteNode({ node: getNode(data.id) })
-    })
-    fetchActivity.end()
+    // // Delete diff nodes
+    // diff.forEach(data => {
+    //   deleteNode({ node: getNode(data.id) })
+    // })
   }
+
+  fetchActivity.end()
 }

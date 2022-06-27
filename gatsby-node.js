@@ -53,15 +53,23 @@ exports.sourceNodes = function () {
     var _ref3$sources = _ref3.sources,
         sources = _ref3$sources === undefined ? {} : _ref3$sources;
 
-    var createNode, deleteNode, touchNode, _loop, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, source;
+    var createNode, deleteNode, touchNode, fetchActivity, _loop, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, source;
 
     return _regenerator2.default.wrap(function _callee$(_context2) {
       while (1) {
         switch (_context2.prev = _context2.next) {
           case 0:
             createNode = actions.createNode, deleteNode = actions.deleteNode, touchNode = actions.touchNode;
+
+            // Start activity, Strapi data fetching
+
+            fetchActivity = reporter.activityTimer('Fetched Strapi Data');
+
+            fetchActivity.start();
+
+            // The for loop is needed because of the await promises
             _loop = /*#__PURE__*/_regenerator2.default.mark(function _loop(source) {
-              var apiURL, contentTypes, singleTypes, loginData, queryLimit, jwtToken, fetchActivity, contentTypePromises, singleTypePromises, entities, newNodes, existingNodes, diff;
+              var apiURL, contentTypes, singleTypes, loginData, queryLimit, jwtToken, contentTypePromises, singleTypePromises, entities, newNodes, existingNodes;
               return _regenerator2.default.wrap(function _loop$(_context) {
                 while (1) {
                   switch (_context.prev = _context.next) {
@@ -76,11 +84,6 @@ exports.sourceNodes = function () {
                     case 3:
                       jwtToken = _context.sent;
 
-
-                      // Start activity, Strapi data fetching
-                      fetchActivity = reporter.activityTimer('Fetched Strapi Data');
-
-                      fetchActivity.start();
 
                       // Generate a list of promises based on the `contentTypes` option.
                       contentTypePromises = contentTypes.map(function (contentType) {
@@ -107,12 +110,12 @@ exports.sourceNodes = function () {
 
                       // Execute the promises
 
-                      _context.next = 10;
+                      _context.next = 8;
                       return _promise2.default.all([].concat((0, _toConsumableArray3.default)(contentTypePromises), (0, _toConsumableArray3.default)(singleTypePromises)));
 
-                    case 10:
+                    case 8:
                       entities = _context.sent;
-                      _context.next = 13;
+                      _context.next = 11;
                       return _normalize2.default.downloadMediaFiles({
                         entities: entities,
                         apiURL: apiURL,
@@ -123,7 +126,7 @@ exports.sourceNodes = function () {
                         jwtToken: jwtToken
                       });
 
-                    case 13:
+                    case 11:
                       entities = _context.sent;
 
 
@@ -156,24 +159,16 @@ exports.sourceNodes = function () {
                       });
 
                       // Make a diff array between existing nodes and new ones
-                      diff = existingNodes.filter(function (_ref4) {
-                        var id1 = _ref4.id;
-                        return !newNodes.some(function (_ref5) {
-                          var id2 = _ref5.id;
-                          return id2 === id1;
-                        });
-                      });
+                      // const diff = existingNodes.filter(
+                      //   ({ id: id1 }) => !newNodes.some(({ id: id2 }) => id2 === id1)
+                      // )
 
-                      // Delete diff nodes
+                      // // Delete diff nodes
+                      // diff.forEach(data => {
+                      //   deleteNode({ node: getNode(data.id) })
+                      // })
 
-                      diff.forEach(function (data) {
-                        deleteNode({ node: getNode(data.id) });
-                      });
-                      fetchActivity.end();
-
-                      reporter.info('Finished fetching data from Strapi');
-
-                    case 22:
+                    case 16:
                     case 'end':
                       return _context.stop();
                   }
@@ -183,63 +178,67 @@ exports.sourceNodes = function () {
             _iteratorNormalCompletion = true;
             _didIteratorError = false;
             _iteratorError = undefined;
-            _context2.prev = 5;
+            _context2.prev = 7;
             _iterator = (0, _getIterator3.default)(sources);
 
-          case 7:
+          case 9:
             if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
-              _context2.next = 13;
+              _context2.next = 15;
               break;
             }
 
             source = _step.value;
-            return _context2.delegateYield(_loop(source), 't0', 10);
+            return _context2.delegateYield(_loop(source), 't0', 12);
 
-          case 10:
+          case 12:
             _iteratorNormalCompletion = true;
-            _context2.next = 7;
-            break;
-
-          case 13:
-            _context2.next = 19;
+            _context2.next = 9;
             break;
 
           case 15:
-            _context2.prev = 15;
-            _context2.t1 = _context2['catch'](5);
+            _context2.next = 21;
+            break;
+
+          case 17:
+            _context2.prev = 17;
+            _context2.t1 = _context2['catch'](7);
             _didIteratorError = true;
             _iteratorError = _context2.t1;
 
-          case 19:
-            _context2.prev = 19;
-            _context2.prev = 20;
+          case 21:
+            _context2.prev = 21;
+            _context2.prev = 22;
 
             if (!_iteratorNormalCompletion && _iterator.return) {
               _iterator.return();
             }
 
-          case 22:
-            _context2.prev = 22;
+          case 24:
+            _context2.prev = 24;
 
             if (!_didIteratorError) {
-              _context2.next = 25;
+              _context2.next = 27;
               break;
             }
 
             throw _iteratorError;
 
-          case 25:
-            return _context2.finish(22);
-
-          case 26:
-            return _context2.finish(19);
-
           case 27:
+            return _context2.finish(24);
+
+          case 28:
+            return _context2.finish(21);
+
+          case 29:
+
+            fetchActivity.end();
+
+          case 30:
           case 'end':
             return _context2.stop();
         }
       }
-    }, _callee, undefined, [[5, 15, 19, 27], [20,, 22, 26]]);
+    }, _callee, undefined, [[7, 17, 21, 29], [22,, 24, 28]]);
   }));
 
   return function (_x, _x2) {
