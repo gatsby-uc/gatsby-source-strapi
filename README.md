@@ -189,7 +189,7 @@ To query your asset use the following query:
 
 #### Rich text field
 
-Rich text fields can now be processed using the [`gatsby-transformer-remark`](https://www.gatsbyjs.com/plugins/gatsby-transformer-remark/https://www.gatsbyjs.com/plugins/gatsby-transformer-remark/) plugin.
+Rich text fields can now be processed using the [`gatsby-transformer-remark`](https://www.gatsbyjs.com/plugins/gatsby-transformer-remark/) plugin.
 
 > It only works if the content of the rich text field saved in the database is in markdown format. So if you customized the WYSIWYG in your Strapi Administration panel make sure that it is saved in a markdown format.
 
