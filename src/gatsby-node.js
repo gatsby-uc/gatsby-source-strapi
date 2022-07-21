@@ -1,11 +1,6 @@
 import { fetchStrapiContentTypes, fetchEntities, fetchEntity } from './fetch';
 import { downloadMediaFiles } from './download-media-files';
-import {
-  buildMapFromNodes,
-  buildNodesToRemoveMap,
-  getEndpoints,
-  makeParentNodeName,
-} from './helpers';
+import { getEndpoints, makeParentNodeName } from './helpers';
 import { createNodes } from './normalize';
 
 const LAST_FETCHED_KEY = 'timestamp';
@@ -26,6 +21,7 @@ exports.sourceNodes = async (
   },
   strapiConfig
 ) => {
+  console.log('using linked gatsby-source-strapi');
   // Cast singleTypes and collectionTypes to empty arrays if they're not defined
   if (!Array.isArray(strapiConfig.singleTypes)) {
     strapiConfig.singleTypes = [];
@@ -36,7 +32,7 @@ exports.sourceNodes = async (
 
   const { schemas } = await fetchStrapiContentTypes(strapiConfig);
 
-  const { deleteNode, touchNode } = actions;
+  const { touchNode, createParentChildLink } = actions;
 
   const ctx = {
     strapiConfig,
@@ -103,31 +99,6 @@ exports.sourceNodes = async (
 
   const data = newOrExistingEntries || allResults;
 
-  // Build a map of all nodes with the gatsby id and the strapi_id
-  const existingNodesMap = buildMapFromNodes(existingNodes);
-
-  // Build a map of all the parent nodes that should be removed
-  // This should also delete all the created nodes for markdown, relations, dz...
-  // When fetching only one content type and populating its relations it might cause some issues
-  // as the relation nodes will never be deleted
-  // it's best to fetch the content type and its relations separately and to populate
-  // only one level of relation
-  const nodesToRemoveMap = buildNodesToRemoveMap(existingNodesMap, endpoints, allResults);
-
-  // Delete all nodes that should be deleted
-  Object.entries(nodesToRemoveMap).forEach(([nodeName, nodesToDelete]) => {
-    if (nodesToDelete.length) {
-      reporter.info(`Strapi: ${nodeName} deleting ${nodesToDelete.length}`);
-
-      nodesToDelete.forEach(({ id }) => {
-        const node = getNode(id);
-
-        touchNode(node);
-        deleteNode(node);
-      });
-    }
-  });
-
   let warnOnceForNoSupport = false;
 
   await cache.set(LAST_FETCHED_KEY, Date.now());
@@ -141,6 +112,14 @@ exports.sourceNodes = async (
       const nodes = createNodes(entity, ctx, uid);
 
       await Promise.all(nodes.map((n) => actions.createNode(n)));
+
+      // Create links between parent and child nodes after they're all created
+      nodes.forEach((n) => {
+        const parentNode = getNode(n.parent);
+        if (parentNode) {
+          createParentChildLink({ parent: parentNode, child: n });
+        }
+      });
 
       const nodeType = makeParentNodeName(ctx.schemas, uid);
 

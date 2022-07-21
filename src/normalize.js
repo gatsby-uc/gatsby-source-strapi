@@ -243,7 +243,7 @@ export const createNodes = (entity, ctx, uid) => {
         delete entity[attributeName];
       }
 
-      // Create nodes for richtext in order to make the markdown-remark plugin works
+      // Create nodes for richtext in order to make the markdown-remark plugin work
       if (type === 'richtext') {
         const textNode = prepareTextNode(value.data, {
           createContentDigest,
@@ -252,7 +252,7 @@ export const createNodes = (entity, ctx, uid) => {
           attributeName,
         });
 
-        entryNode.children = entryNode.children.concat([textNode.id]);
+        // entryNode.children = entryNode.children.concat([textNode.id]);
 
         entity[attributeName][`data___NODE`] = textNode.id;
 
@@ -271,7 +271,7 @@ export const createNodes = (entity, ctx, uid) => {
           attributeName,
         });
 
-        entryNode.children = entryNode.children.concat([JSONNode.id]);
+        // entryNode.children = entryNode.children.concat([JSONNode.id]);
 
         entity[`${attributeName}___NODE`] = JSONNode.id;
         // Resolve only the attributeName___NODE and not to both ones

@@ -1,46 +1,5 @@
 import _ from 'lodash';
 
-const buildMapFromNodes = (nodes) => {
-  return nodes.reduce((acc, current) => {
-    const { internal, strapi_id, id } = current;
-    const type = internal?.type;
-
-    // We only delete the parent nodes
-    if (type.includes('STRAPI__COMPONENT_')) {
-      return acc;
-    }
-
-    if (type.includes('_JSONNODE')) {
-      return acc;
-    }
-
-    if (type.includes('_TEXTNODE')) {
-      return acc;
-    }
-
-    if (type && id && strapi_id) {
-      if (acc[type]) {
-        acc[type] = [
-          ...acc[type],
-          {
-            strapi_id,
-            id,
-          },
-        ];
-      } else {
-        acc[type] = [
-          {
-            strapi_id,
-            id,
-          },
-        ];
-      }
-    }
-
-    return acc;
-  }, {});
-};
-
 const buildMapFromData = (endpoints, data) => {
   const map = {};
 
@@ -59,28 +18,6 @@ const buildMapFromData = (endpoints, data) => {
   }
 
   return map;
-};
-
-const buildNodesToRemoveMap = (existingNodesMap, endpoints, data) => {
-  const newNodes = buildMapFromData(endpoints, data);
-
-  const toRemoveMap = Object.entries(existingNodesMap).reduce((acc, [name, value]) => {
-    const currentNodes = newNodes[name];
-
-    // Since we create nodes for relations when fetching the api
-    // We only to delete nodes that are actually being fetched
-    if (!currentNodes) {
-      return acc;
-    }
-
-    acc[name] = value.filter((j) => {
-      return currentNodes.findIndex((k) => k.strapi_id === j.strapi_id) === -1;
-    });
-
-    return acc;
-  }, {});
-
-  return toRemoveMap;
 };
 
 const getContentTypeSchema = (schemas, ctUID) => {
@@ -170,11 +107,4 @@ const makeParentNodeName = (schemas, uid) => {
   return _.toUpper(nodeName);
 };
 
-export {
-  buildMapFromNodes,
-  buildMapFromData,
-  buildNodesToRemoveMap,
-  getContentTypeSchema,
-  getEndpoints,
-  makeParentNodeName,
-};
+export { buildMapFromData, getContentTypeSchema, getEndpoints, makeParentNodeName };
