@@ -252,7 +252,7 @@ export const createNodes = (entity, ctx, uid) => {
           attributeName,
         });
 
-        entryNode.children = entryNode.children.concat([textNode.id]);
+        // entryNode.children = entryNode.children.concat([textNode.id]);
 
         entity[attributeName][`data___NODE`] = textNode.id;
 
