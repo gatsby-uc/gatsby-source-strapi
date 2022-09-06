@@ -118,10 +118,10 @@ const extractImages = async (item, ctx, uid) => {
 
     const type = attribute?.type || null;
 
-    // TODO maybe extract images for relations but at some point it causes issues
-    // if (attribute?.type === 'relation' ) {
-    //   return extractImages(value, ctx, attribute.target);
-    // }
+    // Extract images for relations
+    if (attribute?.type === 'relation') {
+      return extractImages(value, ctx, attribute.target);
+    }
 
     if (value && type) {
       if (type === 'richtext') {
