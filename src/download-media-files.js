@@ -118,11 +118,6 @@ const extractImages = async (item, ctx, uid) => {
 
     const type = attribute?.type || null;
 
-    // Extract images for relations
-    if (attribute?.type === 'relation') {
-      return extractImages(value, ctx, attribute.target);
-    }
-
     if (value && type) {
       if (type === 'richtext') {
         const extractedFiles = extractFiles(value.data, apiURL);
@@ -176,6 +171,10 @@ const extractImages = async (item, ctx, uid) => {
         } else {
           await extractImages(value, ctx, attribute.component);
         }
+      }
+
+      if (type === 'relation') {
+        await extractImages(value, ctx, attribute.target);
       }
 
       if (type === 'media') {
