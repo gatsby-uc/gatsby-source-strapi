@@ -94,19 +94,23 @@ const getEndpoints = ({ collectionTypes, singleTypes }, schemas) => {
 
   const endpoints = schemas
     .filter(
-      ({ schema }) =>
+      ({ schema, uid }) =>
+        !uid.startsWith('admin::') &&
         types.findIndex(({ singularName }) => singularName === schema.singularName) !== -1
     )
-    .map(({ schema: { kind, singularName, pluralName }, uid }) => {
+    .map(({ schema: { kind, singularName, pluralName }, uid, plugin }) => {
       const options = types.find((config) => config.singularName === singularName);
       const { queryParams, queryLimit, pluginOptions } = options;
+
+      // Prepend plugin prefix except for users as their endpoint is /api/users
+      const pluginPrefix = plugin && singularName !== 'user' ? `${plugin}/` : '';
 
       if (kind === 'singleType') {
         return {
           singularName,
           kind,
           uid,
-          endpoint: `/api/${singularName}`,
+          endpoint: `/api/${pluginPrefix}${singularName}`,
           queryParams: queryParams || {
             populate: '*',
           },
@@ -119,7 +123,7 @@ const getEndpoints = ({ collectionTypes, singleTypes }, schemas) => {
         pluralName,
         kind,
         uid,
-        endpoint: `/api/${pluralName}`,
+        endpoint: `/api/${pluginPrefix}${pluralName}`,
         queryParams: {
           ...(queryParams || {}),
           pagination: {
